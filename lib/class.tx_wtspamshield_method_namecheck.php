@@ -6,14 +6,15 @@ class tx_wtspamshield_method_namecheck extends tslib_pibase {
 	var $extKey = 'wt_spamshield'; // Extension key of current extension
 	
 	// Function nameCheck() to disable the same first- and lastname
-	function nameCheck($name1,$name2) {
+	function nameCheck($name1, $name2, $note) {
 		$conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
 		
 		if(isset($conf)) { // Only if Backendconfiguration exists in localconf
 			if($conf['useNameCheck'] == 1) { // Only if enabled in backendconfiguration
 				
 				if($name1 === $name2 && $name1) { // if firstname is lastname and firstname exists
-					$error = 'It\'s not allowed to use the same firstname and lastname<br />';
+					$error = 'It\'s not allowed to use the same firstname and lastname<br />'; // default note
+					if ($note) $error = $note.'<br />'; // note from tsconfig
 				}
 				if(isset($error)) return $error;
 				

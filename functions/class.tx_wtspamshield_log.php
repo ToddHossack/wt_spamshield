@@ -11,24 +11,16 @@ class tx_wtspamshield_log extends tslib_pibase {
 		$conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
 		
 		if(isset($conf)) { // Only if Backendconfiguration exists in localconf
-			if($conf['log'] == 1) { // Only if enabled in backendconfiguration and key was set
-				
-				// Create formvalues as string
-				$formvalue = '';
-				if(isset($formArray)) {
-					foreach ($formArray as $key => $value) {
-						$formvalue .= $key.': '.$value."\n";
-					}
-				}
+			if($conf['pid'] > -1) { // Only if enabled in backendconfiguration and key was set
 				
 				// DB entry for table tx_wtspamshield_log
 				$db_values = array (
-					'pid' => 0,
+					'pid' => $conf['pid'],
 					'tstamp' => time(),
 					'crdate' => time(),
 					'form' => $ext,
 					'errormsg' => str_replace(array('<br>','<br />'),"\n",$error),
-					'formvalues' => $formvalue,
+					'formvalues' => t3lib_div::view_array($formArray),
 					'pageid' => $GLOBALS['TSFE']->id,
 					'ip' => $_SERVER['REMOTE_ADDR'],
 					'useragent' => $_SERVER['HTTP_USER_AGENT']

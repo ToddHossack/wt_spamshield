@@ -20,45 +20,46 @@ class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 	
 	// Stop DB entry if spam - use Hook in ve_guestbook
 	function formvalidation($form) {
-		$error = '';
+		$error = ''; // no error at the beginning
+		$this->tsconfig = t3lib_BEfunc::getModTSconfig($GLOBALS['TSFE']->id, 'wt_spamshield'); // Get tsconfig from current page
 		
-		// 1. nameCheck
+		// 1a. nameCheck
 		if(!$error) {
 			$method_namecheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_namecheck'); // Generate Instance for session method
-			$error .= $method_namecheck_instance->nameCheck($form['firstname'],$form['surname']);
+			$error .= $method_namecheck_instance->nameCheck($form['firstname'], $form['surname'], $this->tsconfig['properties']['message.']['namecheck']);
 		}
 		
-		// 2. httpCheck
+		// 1b. httpCheck
 		if(!$error) {
 			$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for session method
-			$error .= $method_httpcheck_instance->httpCheck($form);
+			$error .= $method_httpcheck_instance->httpCheck($form, $this->tsconfig['properties']['message.']['httpcheck']);
 		}
 		
-		// 3. sessionCheck
+		// 1c. sessionCheck
 		if(!$error) {
 			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
-			$error .= $method_session_instance->checkSessionTime();
+			$error .= $method_session_instance->checkSessionTime($this->tsconfig['properties']['message.']['session.']['note1'], $this->tsconfig['properties']['message.']['session.']['note2'], $this->tsconfig['properties']['message.']['session.']['note3']);
 		}
 		
-		// 4. Akismet Check
+		// 1d. Akismet Check
 		if(!$error) {
 			$method_akismet_instance = t3lib_div::makeInstance('tx_wtspamshield_method_akismet'); // Generate Instance for session method
-			$error .= $method_akismet_instance->checkAkismet($form);
+			$error .= $method_akismet_instance->checkAkismet($form, $this->tsconfig['properties']['message.']['akismet']);
 		}
 		
-		// 5. Safe log file
+		// 2a. Safe log file
 		if($error) {
 			$method_log_instance = t3lib_div::makeInstance('tx_wtspamshield_log'); // Generate Instance for session method
 			$method_log_instance->dbLog('ve_guestbook',$error,$form);
 		}
 		
-		// 6. Send email to admin
+		// 2b. Send email to admin
 		if($error) {
 			$method_sendEmail_instance = t3lib_div::makeInstance('tx_wtspamshield_mail'); // Generate Instance for session method
 			$method_sendEmail_instance->sendEmail('ve_guestbook',$error,$form);
 		}
 		
-		// 7. Return Error message if exists
+		// 2c. Return Error message if exists
 		if(!empty($error)) { // If error
 			return $error;
 		}

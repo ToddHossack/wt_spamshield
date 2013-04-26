@@ -4,6 +4,7 @@ require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_m
 require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_httpcheck.php');
 require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_namecheck.php');
 require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_akismet.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_unique.php');
 require_once(t3lib_extMgm::extPath('wt_spamshield').'functions/class.tx_wtspamshield_log.php');
 require_once(t3lib_extMgm::extPath('wt_spamshield').'functions/class.tx_wtspamshield_mail.php');
 
@@ -18,39 +19,48 @@ class tx_wtspamshield_powermail extends tslib_pibase {
 
 	// Function PM_FieldWrapMarkerHook() to manipulate Fieldwraps
 	function PM_SubmitBeforeMarkerHook($obj,$markerArray = array(),$sessiondata = array()) {
+		// config
 		$error = ''; // no error at the beginning
+		$this->tsconfig = t3lib_BEfunc::getModTSconfig($GLOBALS['TSFE']->id, 'wt_spamshield'); // Get tsconfig from current page
 		
-		// 1. sessionCheck
-		if(!$error) {
+		// 1a. sessionCheck
+		if (!$error) {
 			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
-			$error .= $method_session_instance->checkSessionTime();
+			$error .= $method_session_instance->checkSessionTime($this->tsconfig['properties']['message.']['session.']['note1'], $this->tsconfig['properties']['message.']['session.']['note2'], $this->tsconfig['properties']['message.']['session.']['note3']);
 		}
 		
-		// 2. httpCheck
-		if(!$error) {
+		// 1b. httpCheck
+		if (!$error) {
 			$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for session method
-			$error .= $method_httpcheck_instance->httpCheck($sessiondata);
+			$error .= $method_httpcheck_instance->httpCheck($sessiondata, $this->tsconfig['properties']['message.']['httpcheck']);
 		}
 		
-		// 3. Safe log file
-		if($error) {
+		// 1c. uniqueCheck
+		if (!$error) {
+			$method_unique_instance = t3lib_div::makeInstance('tx_wtspamshield_method_unique'); // Generate Instance for session method
+			$error .= $method_unique_instance->main($sessiondata, $this->tsconfig['properties']['message.']['uniquecheck']);
+		}
+		
+		// 2a. Safe log file
+		if ($error) {
 			$method_log_instance = t3lib_div::makeInstance('tx_wtspamshield_log'); // Generate Instance for session method
 			$method_log_instance->dbLog('powermail',$error,$sessiondata);
 		}
 		
-		// 4. Send email to admin
-		if($error) {
+		// 2b. Send email to admin
+		if ($error) {
 			$method_sendEmail_instance = t3lib_div::makeInstance('tx_wtspamshield_mail'); // Generate Instance for session method
 			$method_sendEmail_instance->sendEmail('powermail',$error,$sessiondata);
 		}
 		
-		// 5. Return Error message if exists
-		if(!empty($error)) { // If error
+		// 2c. Return Error message if exists
+		if (!empty($error)) { // If error
 			return $error;
 		}
 	}
 
 }
+
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/ext/class.tx_wtspamshield_powermail.php']) {
 	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/ext/class.tx_wtspamshield_powermail.php']);
 }

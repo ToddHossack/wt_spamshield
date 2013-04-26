@@ -26,6 +26,7 @@ $TCA["tx_wtspamshield_log"] = array (
                 "eval" => "required",
             )
         ),
+		/*
         "formvalues" => Array (        
             "exclude" => 1,        
             "label" => "LLL:EXT:wt_spamshield/locallang_db.xml:tx_wtspamshield_log.formvalues",        
@@ -33,6 +34,27 @@ $TCA["tx_wtspamshield_log"] = array (
                 "type" => "text",
                 "cols" => "30",    
                 "rows" => "5",
+            )
+        ),
+		*/
+		"formvalues" => array (        
+            "exclude" => 1,        
+            "label" => "LLL:EXT:wt_spamshield/locallang_db.xml:tx_wtspamshield_log.formvalues",        
+            "config" => array (
+                "type" => "text",
+                "cols" => "30",
+                "rows" => "5",
+                "wizards" => array (
+                    "_PADDING" => 2,
+                    "RTE" => array(
+                        "notNewRecords" => 1,
+                        "RTEonly" => 1,
+                        "type" => "script",
+                        "title" => "LLL:EXT:powermail/locallang_db.xml:tx_powermail_mails.content_RTE",
+                        "icon" => "wizard_rte2.gif",
+                        "script" => "wizard_rte.php",
+                    ),
+                ),
             )
         ),
         "pageid" => Array (        
@@ -61,7 +83,7 @@ $TCA["tx_wtspamshield_log"] = array (
         ),
     ),
     "types" => array (
-        "0" => array("showitem" => "form;;;;1-1-1, errormsg, formvalues, pageid, ip, useragent")
+        "0" => array("showitem" => "form;;;;1-1-1, errormsg, formvalues;;;richtext[], pageid, ip, useragent")
     ),
     "palettes" => array (
         "1" => array("showitem" => "")

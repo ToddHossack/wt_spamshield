@@ -7,14 +7,15 @@ class tx_wtspamshield_method_httpcheck extends tslib_pibase {
 	var $searchstring = 'http://'; // searchstring
 	
 	// Function nameCheck() to disable the same first- and lastname
-	function httpCheck($array) {
+	function httpCheck($array, $note) {
 		$this->conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
 		
 		if(isset($this->conf) && isset($array)) { // Only if Backendconfiguration exists in localconf
 			if($this->conf['usehttpCheck'] > 0) { // Only if enabled in backendconfiguration (disabled if 0)
 				
 				$no_of_errors = 0; // init $errors
-				$error = 'It\'s not allowed to use more than '.$this->conf['usehttpCheck'].' links within this form<br />';
+				$error = sprintf('It\'s not allowed to use more than %s links within this form', $this->conf['usehttpCheck']).'<br />'; // default note
+				if ($note) $error = sprintf($note, $this->conf['usehttpCheck']).'<br />'; // note from tsconfig
 				
 				
 				foreach ($array as $key => $value) { // One loop for every array entry
