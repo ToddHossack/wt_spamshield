@@ -22,7 +22,7 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-require_once(PATH_tslib.'class.tslib_pibase.php');
+require_once(PATH_tslib . 'class.tslib_pibase.php');
 
 class tx_wtspamshield_method_honeypod extends tslib_pibase {
 
@@ -34,7 +34,10 @@ class tx_wtspamshield_method_honeypod extends tslib_pibase {
 	function createHoneypod() {
 		$this->conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
 		if ($this->conf['honeypodCheck']) { // only if honeypodcheck was enabled in ext Manager
-			$code = '<input type="text" name="'.$this->prefix_inputName.'['.$this->inputName.']" style="position: absolute; margin: 0 0 0 -9999px;" value="" />';
+			$code = '<input type="text" name="';
+			$code .= $this->prefix_inputName . '[' . $this->inputName . ']"';
+			$code .= ' style="position: absolute; margin: 0 0 0 -9999px;" value=""';
+			$code .= ' class="' . $this->prefix_inputName . '_tastyhoney" />';
 			return $code;
 		}
 	}
@@ -43,7 +46,7 @@ class tx_wtspamshield_method_honeypod extends tslib_pibase {
 	function checkHoney(&$sessiondata, $note = '') {
 		$this->conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
 		if (!empty($sessiondata[$this->inputName]) && $this->conf['honeypodCheck']) { // There is spam in the honeypod AND honeypodcheck was enabled in ext Manager
-			return (!empty($note) ? $note : 'Entry in honeypod recognized!').'<br />';
+			return (!empty($note) ? $note : 'Entry in honeypod recognized!') . '<br />';
 		}
 		unset($sessiondata[$this->inputName]); // delete honeypot
 	}

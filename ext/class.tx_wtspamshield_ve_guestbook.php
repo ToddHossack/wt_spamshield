@@ -22,14 +22,14 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-require_once(PATH_tslib.'class.tslib_pibase.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_namecheck.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_httpcheck.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_session.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_akismet.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_honeypod.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'functions/class.tx_wtspamshield_log.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'functions/class.tx_wtspamshield_mail.php');
+require_once(PATH_tslib . 'class.tslib_pibase.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'lib/class.tx_wtspamshield_method_namecheck.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'lib/class.tx_wtspamshield_method_httpcheck.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'lib/class.tx_wtspamshield_method_session.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'lib/class.tx_wtspamshield_method_akismet.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'lib/class.tx_wtspamshield_method_honeypod.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'functions/class.tx_wtspamshield_log.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'functions/class.tx_wtspamshield_mail.php');
 
 class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 
@@ -47,7 +47,7 @@ class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 			$method_honeypod_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypod'); // Generate Instance for honeypod method
 			$method_honeypod_instance->inputName = $this->honeypod_inputName; 
 			$method_honeypod_instance->prefix_inputName = $this->prefix_inputName; 
-			$obj->templateCode = str_replace('</form>', $method_honeypod_instance->createHoneypod().'</form>', $obj->templateCode); // add input field
+			$obj->templateCode = str_replace('</form>', $method_honeypod_instance->createHoneypod() . '</form>', $obj->templateCode); // add input field
 		}
 		return $markerArray; // return markerArray to ve_guestbook (without change)
 	}
@@ -107,13 +107,15 @@ class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 			
 			// 2c. Truncate ve_guestbook temp table
 			if ($error) {
-				mysql_query("TRUNCATE TABLE tx_wtspamshield_veguestbooktemp"); // Truncate ve_guestbook temp table
+				mysql_query('TRUNCATE TABLE tx_wtspamshield_veguestbooktemp'); // Truncate ve_guestbook temp table
 			}
 			
 			// 2d. Redirect if error happens
 			if (!empty($error)) { // If error
 				$saveData = array('tstamp' => time()); // add timestamp
 				$obj->strEntryTable = 'tx_wtspamshield_veguestbooktemp'; // change table for saving
+				$obj->config['notify_mail'] = ''; // don't send a notify email
+				$obj->config['feedback_mail'] = false; // don't send a feedback mail
 				$obj->config['redirect_page'] = (intval($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['redirect.']['ve_guestbook']) > 0 ? $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['redirect.']['ve_guestbook'] : 1); // pid to redirect
 			}
 		}

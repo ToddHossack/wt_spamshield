@@ -1,16 +1,16 @@
 # TYPO3 Extension "wt_spamshield"
 Spam shield without captcha to avoid spam in powermail, ve_guestbook, comments, t3_blog and standard TYPO3 mailforms. Session check, Link check, Time check, Akismet check, Name check, Honeypot check (see manual for details)
 
-## Version 0.5.2
+## Version 0.5.3
 
 
 
 
 <table>
-	<tr><td>Version</td><td>0.5.2 beta</td></tr>
-	<tr><td>Release date</td><td>29. May 2009</td></tr>
+	<tr><td>Version</td><td>0.5.3 beta</td></tr>
+	<tr><td>Release date</td><td>30. November 2009</td></tr>
 	<tr><td>Author</td><td>Alex Kellner</td></tr>
-	<tr><td>Comment</td><td>Errormessage in own DIV, small code clearing</td></tr>
+	<tr><td>Comment</td><td>If spam in ve_guestbook - dont send notify emails, add CSS class to honeypod field</td></tr>
 </table>
 
 ## !! Attention !!
