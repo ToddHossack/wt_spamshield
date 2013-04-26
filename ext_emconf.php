@@ -12,10 +12,10 @@
 
 $EM_CONF[$_EXTKEY] = array (
 	'title' => 'Spamshield',
-	'description' => 'Anti Spam Class',
+	'description' => 'Spam shield to avoid spam in powermail and ve_guestbook. Session check, Link check, Time check, Akismet check, Name check (see manual for details)',
 	'category' => 'services',
 	'shy' => 0,
-	'version' => '0.1.4',
+	'version' => '0.1.5',
 	'dependencies' => '',
 	'conflicts' => '',
 	'priority' => '',
