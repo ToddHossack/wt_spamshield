@@ -37,7 +37,11 @@ class tx_wtspamshield_defaultmailform extends tslib_pibase {
 
 	var $honeypod_inputName = 'wt_spamshield_honey';
 	
-	// Function generateSession() for first session
+	/**
+	 * Function generateSession() is called if the form is rendered (generate a session)
+	 *
+	 * @return	void
+	 */
 	function generateSession() {
 		$this->div = t3lib_div::makeInstance('tx_wtspamshield_div'); // Generate Instance for div method
 		
@@ -52,9 +56,15 @@ class tx_wtspamshield_defaultmailform extends tslib_pibase {
 			$method_session_instance->setSessionTime(); // Start setSessionTime() Function: Set session if form is loaded
 		}
 	}
-
 	
-	// Function sendFormmail_preProcessVariables() to stop mail if needed
+	/**
+	 * Function sendFormmail_preProcessVariables() is called after submit - stop mail if needed
+	 *
+	 * @param	object		$form: Form Object
+	 * @param	object		$obj: Parent Object
+	 * @param	array		$legacyConfArray: legacy configuration
+	 * @return	object		$form
+	 */
 	function sendFormmail_preProcessVariables($form, $obj, $legacyConfArray = array()) {
 		// config
 		$error = ''; // no error at the beginning

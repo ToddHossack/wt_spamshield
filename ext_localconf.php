@@ -16,5 +16,12 @@ $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['ve_guestbook']['extraItemMarkerHook'][] 
 $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['ve_guestbook']['preEntryInsertHook'][] = 'EXT:wt_spamshield/ext/class.tx_wtspamshield_ve_guestbook.php:tx_wtspamshield_ve_guestbook';
 
 // Hook standard mailform: Disabling email
-$GLOBALS ['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_fe.php']['sendFormmail-PreProcClass'][] = 'EXT:wt_spamshield/ext/class.tx_wtspamshield_defaultmailform.php:tx_wtspamshield_defaultmailform';
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_fe.php']['sendFormmail-PreProcClass'][] = 'EXT:wt_spamshield/ext/class.tx_wtspamshield_defaultmailform.php:tx_wtspamshield_defaultmailform';
+
+// Hook tx_comments: Generating Form
+$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['comments']['form'][] = 'EXT:wt_spamshield/ext/class.tx_wtspamshield_comments.php:tx_wtspamshield_comments->form';
+
+// Hook tx_comments: Generating Form
+$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['comments']['externalSpamCheck'][] = 'EXT:wt_spamshield/ext/class.tx_wtspamshield_comments.php:tx_wtspamshield_comments->externalSpamCheck';
+
 ?>

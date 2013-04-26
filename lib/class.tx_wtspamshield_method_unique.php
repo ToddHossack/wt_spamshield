@@ -28,7 +28,13 @@ class tx_wtspamshield_method_unique extends tslib_pibase {
 
 	var $extKey = 'wt_spamshield'; // Extension key of current extension
 	
-	// Stop DB entry if spam
+	/**
+	 * Check if the values are in more fields and return error
+	 *
+	 * @param	array		$sessiondata: Array with submitted values
+	 * @param	string		$note: Any existing errors
+	 * @return	string		$error: Return errormessage if error exists
+	 */
 	function main($sessiondata, $note) {
 		$this->conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
 		$found = 0; // no errors at the beginning
@@ -45,11 +51,13 @@ class tx_wtspamshield_method_unique extends tslib_pibase {
 				foreach ($myFieldArray as $myKey => $myValue) { // one loop for every field group
 					$wholearray = array(); // clear array
 					$fieldarray = t3lib_div::trimExplode(',', $myValue, 1); // explode at ','
+					
 					if (is_array($fieldarray)) { // if there is an array
 						foreach ($fieldarray as $key => $value) { // one loop for every field
 							if ($sessiondata[$value]) $wholearray[] = $sessiondata[$value]; // if value exists in session, write value to an array
 						}
 					}
+					
 					if (count($wholearray) != count(array_unique($wholearray))) { // if numbers of array values not numbers if array values without double entries
 						$found = 1; // found spam
 					}
@@ -59,7 +67,9 @@ class tx_wtspamshield_method_unique extends tslib_pibase {
 			
 		}
 		
-		if ($found) return $error;
+		if ($found) {
+			return $error;
+		}
 	}
 
 }
@@ -67,4 +77,5 @@ class tx_wtspamshield_method_unique extends tslib_pibase {
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/lib/class.tx_wtspamshield_method_unique.php']) {
 	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/lib/class.tx_wtspamshield_method_unique.php']);
 }
+
 ?>

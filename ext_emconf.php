@@ -12,10 +12,10 @@
 
 $EM_CONF[$_EXTKEY] = array (
 	'title' => 'Spamshield',
-	'description' => 'Spam shield without captcha to avoid spam in powermail, ve_guestbook and standard TYPO3 mailform. Session check, Link check, Time check, Akismet check, Name check, Honeypot check (see manual for details)',
+	'description' => 'Spam shield without captcha to avoid spam in powermail, ve_guestbook, comments and standard TYPO3 mailform. Session check, Link check, Time check, Akismet check, Name check, Honeypot check (see manual for details)',
 	'category' => 'services',
 	'shy' => 0,
-	'version' => '0.6.1',
+	'version' => '0.7.0',
 	'dependencies' => '',
 	'conflicts' => '',
 	'priority' => '',
