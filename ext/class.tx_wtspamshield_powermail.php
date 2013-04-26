@@ -99,7 +99,7 @@ class tx_wtspamshield_powermail extends tslib_pibase {
 			
 			// 2c. Return Error message if exists
 			if (!empty($error)) { // If error
-				return $error;
+				return '<div class="wtspamshield-errormsg">'.$error.'</div>';
 			}
 		}
 	}

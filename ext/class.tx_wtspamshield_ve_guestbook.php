@@ -63,19 +63,19 @@ class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 		
 		if (!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['ve_guestbook'])) { // only if enabled for current page
 			// 1a. nameCheck
-			if(!$error) {
+			if (!$error) {
 				$method_namecheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_namecheck'); // Generate Instance for namecheck method
 				$error .= $method_namecheck_instance->nameCheck($form['firstname'], $form['surname'], $this->messages['namecheck']);
 			}
 			
 			// 1b. httpCheck
-			if(!$error) {
+			if (!$error) {
 				$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for http method
 				$error .= $method_httpcheck_instance->httpCheck($form, $this->messages['httpcheck']);
 			}
 			
 			// 1c. sessionCheck
-			if(!$error) {
+			if (!$error) {
 				$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
 				$error .= $method_session_instance->checkSessionTime($this->messages['session.']['note1'], $this->messages['session.']['note2'], $this->messages['session.']['note3']);
 			}
@@ -88,30 +88,30 @@ class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 			}
 			
 			// 1e. Akismet Check
-			if(!$error) {
+			if (!$error) {
 				$method_akismet_instance = t3lib_div::makeInstance('tx_wtspamshield_method_akismet'); // Generate Instance for Akismet method
 				$error .= $method_akismet_instance->checkAkismet($form, $this->messages['akismet']);
 			}
 			
 			// 2a. Safe log file
-			if($error) {
+			if ($error) {
 				$method_log_instance = t3lib_div::makeInstance('tx_wtspamshield_log'); // Generate Instance for session method
 				$method_log_instance->dbLog('ve_guestbook', $error, $form);
 			}
 			
 			// 2b. Send email to admin
-			if($error) {
+			if ($error) {
 				$method_sendEmail_instance = t3lib_div::makeInstance('tx_wtspamshield_mail'); // Generate Instance for session method
 				$method_sendEmail_instance->sendEmail('ve_guestbook', $error, $form);
 			}
 			
 			// 2c. Truncate ve_guestbook temp table
-			if($error) {
+			if ($error) {
 				mysql_query("TRUNCATE TABLE tx_wtspamshield_veguestbooktemp"); // Truncate ve_guestbook temp table
 			}
 			
 			// 2d. Redirect if error happens
-			if(!empty($error)) { // If error
+			if (!empty($error)) { // If error
 				$saveData = array('tstamp' => time()); // add timestamp
 				$obj->strEntryTable = 'tx_wtspamshield_veguestbooktemp'; // change table for saving
 				$obj->config['redirect_page'] = (intval($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['redirect.']['ve_guestbook']) > 0 ? $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['redirect.']['ve_guestbook'] : 1); // pid to redirect
