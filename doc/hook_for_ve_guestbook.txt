@@ -1,0 +1,9 @@
+// function checkForm() at the end but before $error .= $errorBlacklist; in file class.tx_veguestbook_pi1.php
+
+// Adds hook for form validation
+if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['ve_guestbook']['formvalidation'])) {
+	foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['ve_guestbook']['formvalidation'] as $_classRef) {
+		$_procObj = & t3lib_div::getUserObj($_classRef);
+		$error .= $_procObj->formvalidation($this->postvars);
+	}
+}
