@@ -15,11 +15,29 @@ class tx_wtspamshield_method_httpcheck extends tslib_pibase {
 				
 				$no_of_errors = 0; // init $errors
 				$error = 'It\'s not allowed to use more than '.$this->conf['usehttpCheck'].' links within this form<br />';
-					
-				foreach ($array as $value) { // One loop for every array entry
-					$result = ''; // init $result
-					preg_match_all('@'.$this->searchstring.'@', $value, $result); // give me all http:// of current string
-					if(isset($result[0])) $no_of_errors += count($result[0]); // add numbers of http:// to $errors
+				
+				
+				foreach ($array as $key => $value) { // One loop for every array entry
+					if (!is_array($value)) { // first level
+						
+						$result = array(); // init $result
+						preg_match_all('@'.$this->searchstring.'@', $value, $result); // give me all http:// of current string
+						if(isset($result[0])) $no_of_errors += count($result[0]); // add numbers of http:// to $errors
+						
+					} else { // second level
+						if (!is_array($value2)) { // second level
+						
+							foreach ($array[$key] as $key2 => $value2 ) { // One loop for every array entry
+								
+								$result = array(); // init $result
+								preg_match_all('@'.$this->searchstring.'@', $value2, $result); // give me all http:// of current string
+								if(isset($result[0])) $no_of_errors += count($result[0]); // add numbers of http:// to $errors
+								
+							}
+							
+						}
+					} 
+				
 				}
 				
 				if($no_of_errors > $this->conf['usehttpCheck']) return $error; // return message if more than allowed http enters
