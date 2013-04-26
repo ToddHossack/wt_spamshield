@@ -41,24 +41,26 @@ class tx_wtspamshield_log extends tslib_pibase {
 		$conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
 		
 		if (isset($conf)) { // Only if Backendconfiguration exists in localconf
-			if ($conf['pid'] > -1) { // Only if enabled in backendconfiguration and key was set
+			if ($conf['pid'] == -1) { // deaktivated
+				return false;
+			}
+			if ($conf['pid'] == -2) { // save on current page
+				$conf['pid'] = $GLOBALS['TSFE']->id;
+			}
 				
-				// DB entry for table tx_wtspamshield_log
-				$db_values = array (
-					'pid' => $conf['pid'],
-					'tstamp' => time(),
-					'crdate' => time(),
-					'form' => $ext,
-					'errormsg' => str_replace(array('<br>', '<br />'), "\n", $error),
-					'formvalues' => t3lib_div::view_array($formArray),
-					'pageid' => $GLOBALS['TSFE']->id,
-					'ip' => t3lib_div::getIndpEnv('REMOTE_ADDR'),
-					'useragent' => t3lib_div::getIndpEnv('HTTP_USER_AGENT')
-				);
-				if ($this->dbInsert) {
-					$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_wtspamshield_log', $db_values); // DB entry
-				}
-				
+			$db_values = array ( // DB entry for table tx_wtspamshield_log
+				'pid' => intval($conf['pid']),
+				'tstamp' => time(),
+				'crdate' => time(),
+				'form' => $ext,
+				'errormsg' => str_replace(array('<br>', '<br />'), "\n", $error),
+				'formvalues' => t3lib_div::view_array($formArray),
+				'pageid' => $GLOBALS['TSFE']->id,
+				'ip' => t3lib_div::getIndpEnv('REMOTE_ADDR'),
+				'useragent' => t3lib_div::getIndpEnv('HTTP_USER_AGENT')
+			);
+			if ($this->dbInsert) {
+				$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_wtspamshield_log', $db_values); // DB entry
 			}
 		}
 			

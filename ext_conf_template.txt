@@ -25,5 +25,5 @@ AkismetKey =
 # cat=basic//090; type=text; label= Send email if spam: Enter an email address if you would like to receive an email if spam was recognized (e.g. email@domain.org)
 email_notify = 
 
-# cat=basic//100; type=int; label= PID where to save logs: Enter any PID for saving spamlog entries (-1 deactivate pid log, 0 save values in root page, 1 save value in pid1 and so on)
+# cat=basic//100; type=int; label= PID where to save logs: Enter any PID for saving spamlog entries (-2 save values in current page, -1 deactivate pid log, 0 save values in root page, 1 save value in pid1 and so on)
 pid = 0

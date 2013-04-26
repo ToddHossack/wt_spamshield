@@ -12,10 +12,10 @@
 
 $EM_CONF[$_EXTKEY] = array (
 	'title' => 'Spamshield',
-	'description' => 'Spam shield without captcha to avoid spam in powermail, ve_guestbook, comments and standard TYPO3 mailform. Session check, Link check, Time check, Akismet check, Name check, Honeypot check (see manual for details)',
+	'description' => 'Spam shield without captcha to avoid spam in powermail, ve_guestbook, comments and standard TYPO3 mailforms. Session check, Link check, Time check, Akismet check, Name check, Honeypot check (see manual for details)',
 	'category' => 'services',
 	'shy' => 0,
-	'version' => '0.7.0',
+	'version' => '0.7.1',
 	'dependencies' => '',
 	'conflicts' => '',
 	'priority' => '',
@@ -28,7 +28,7 @@ $EM_CONF[$_EXTKEY] = array (
 	'clearcacheonload' => 0,
 	'lockType' => '',
 	'author' => 'Alex Kellner',
-	'author_email' => 'Alexander.Kellner@einpraegsam.net',
+	'author_email' => 'Alexander.Kellner@in2code.de',
 	'author_company' => '',
 	'CGLcompliance' => NULL,
 	'CGLcompliance_note' => NULL,
