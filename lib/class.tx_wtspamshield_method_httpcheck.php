@@ -27,7 +27,7 @@ require_once(PATH_tslib.'class.tslib_pibase.php');
 class tx_wtspamshield_method_httpcheck extends tslib_pibase {
 
 	var $extKey = 'wt_spamshield'; // Extension key of current extension
-	var $searchstring = 'http://'; // searchstring
+	var $searchstring = 'http://|https://|ftp.'; // searchstring - former http://
 	
 	// Function nameCheck() to disable the same first- and lastname
 	function httpCheck($array, $note) {

@@ -3,7 +3,7 @@
 /***************************************************************
  * Extension Manager/Repository config file for ext "wt_spamshield".
  *
- * Auto generated 26-04-2013 11:12
+ * Auto generated 26-04-2013 11:13
  *
  * Manual updates:
  * Only the data in the array - everything else is removed by next
@@ -15,7 +15,7 @@ $EM_CONF[$_EXTKEY] = array (
 	'description' => 'Spam shield without captcha to avoid spam in powermail, ve_guestbook and standard TYPO3 mailform. Session check, Link check, Time check, Akismet check, Name check, Honeypot check (see manual for details)',
 	'category' => 'services',
 	'shy' => 0,
-	'version' => '0.5.0',
+	'version' => '0.5.1',
 	'dependencies' => '',
 	'conflicts' => '',
 	'priority' => '',
