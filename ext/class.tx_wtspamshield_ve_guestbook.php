@@ -30,20 +30,31 @@ require_once(t3lib_extMgm::extPath('wt_spamshield') . 'lib/class.tx_wtspamshield
 require_once(t3lib_extMgm::extPath('wt_spamshield') . 'lib/class.tx_wtspamshield_method_honeypod.php');
 require_once(t3lib_extMgm::extPath('wt_spamshield') . 'functions/class.tx_wtspamshield_log.php');
 require_once(t3lib_extMgm::extPath('wt_spamshield') . 'functions/class.tx_wtspamshield_mail.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'functions/class.tx_wtspamshield_div.php');
 
 class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 
 	var $honeypod_inputName = 'uid987654';
 	var $prefix_inputName = 'tx_veguestbook_pi1'; 
 	
+	
 	// Function for ve_guestbook form: set tstamp in session
 	function extraItemMarkerProcessor(&$markerArray, $row, $config, &$obj) {
-		if ($obj->code == 'FORM' && !empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['ve_guestbook'])) { // If guestbookform is shown AND if spamshield should be activated
-			// 1. Session check - generate session entry
+		$this->div = t3lib_div::makeInstance('tx_wtspamshield_div'); // Generate Instance for div method
+		
+		if ( // If guestbookform is shown AND if spamshield should be activated
+			$obj->code == 'FORM' && 
+			!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['ve_guestbook']) &&
+			$this->div->spamshieldIsNotDisabled()
+		) {
+			// 1. check Extension Manager configuration
+			$this->div->checkConf(); // Check Extension Manager configuration
+			
+			// 2. Session check - generate session entry
 			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
 			$method_session_instance->setSessionTime(); // Start setSessionTime() Function: Set session if form is loaded
 			
-			// 2. Honeypod check - generate honeypot Input field
+			// 3. Honeypod check - generate honeypot Input field
 			$method_honeypod_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypod'); // Generate Instance for honeypod method
 			$method_honeypod_instance->inputName = $this->honeypod_inputName; 
 			$method_honeypod_instance->prefix_inputName = $this->prefix_inputName; 
@@ -59,9 +70,13 @@ class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 		$cObj = $TSFE->cObj; // cObject
 		$error = ''; // no error at the beginning
 		$form = t3lib_div::GPvar('tx_veguestbook_pi1'); // get POST vars
+		$this->div = t3lib_div::makeInstance('tx_wtspamshield_div'); // Generate Instance for div method
 		$this->messages = $GLOBALS['TSFE']->tmpl->setup['wt_spamshield.']['message.']; // get messages from Backend
 		
-		if (!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['ve_guestbook'])) { // only if enabled for current page
+		if ( // only if enabled for current page
+			!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['ve_guestbook']) &&
+			$this->div->spamshieldIsNotDisabled()
+		) {
 			// 1a. nameCheck
 			if (!$error) {
 				$method_namecheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_namecheck'); // Generate Instance for namecheck method

@@ -22,15 +22,16 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-require_once(PATH_tslib.'class.tslib_pibase.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_session.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_httpcheck.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_namecheck.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_akismet.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_unique.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_honeypod.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'functions/class.tx_wtspamshield_log.php');
-require_once(t3lib_extMgm::extPath('wt_spamshield').'functions/class.tx_wtspamshield_mail.php');
+require_once(PATH_tslib . 'class.tslib_pibase.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'lib/class.tx_wtspamshield_method_session.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'lib/class.tx_wtspamshield_method_httpcheck.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'lib/class.tx_wtspamshield_method_namecheck.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'lib/class.tx_wtspamshield_method_akismet.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'lib/class.tx_wtspamshield_method_unique.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'lib/class.tx_wtspamshield_method_honeypod.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'functions/class.tx_wtspamshield_log.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'functions/class.tx_wtspamshield_mail.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield') . 'functions/class.tx_wtspamshield_div.php');
 
 class tx_wtspamshield_defaultmailform extends tslib_pibase {
 
@@ -38,7 +39,14 @@ class tx_wtspamshield_defaultmailform extends tslib_pibase {
 	
 	// Function generateSession() for first session
 	function generateSession() {
-		if (!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['standardMailform'])) { // only if spamshield should be activated for standardMailform
+		$this->div = t3lib_div::makeInstance('tx_wtspamshield_div'); // Generate Instance for div method
+		
+		if ( // only if spamshield should be activated for standardMailform
+			!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['standardMailform']) &&
+			$this->div->spamshieldIsNotDisabled()
+		) {
+			$this->div->checkConf(); // Check Extension Manager configuration
+			
 			// Set session on form create
 			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
 			$method_session_instance->setSessionTime(); // Start setSessionTime() Function: Set session if form is loaded
@@ -47,12 +55,16 @@ class tx_wtspamshield_defaultmailform extends tslib_pibase {
 
 	
 	// Function sendFormmail_preProcessVariables() to stop mail if needed
-	function sendFormmail_preProcessVariables($form, $obj, $legacyConfArray=array()) {
+	function sendFormmail_preProcessVariables($form, $obj, $legacyConfArray = array()) {
 		// config
 		$error = ''; // no error at the beginning
+		$this->div = t3lib_div::makeInstance('tx_wtspamshield_div'); // Generate Instance for div method
 		$this->messages = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['message.']; // Get messages from TS
 		
-		if (!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['standardMailform'])) { // only if spamshield should be activated for standardMailform
+		if ( // only if spamshield should be activated for standardMailform
+			!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['standardMailform']) &&
+			$this->div->spamshieldIsNotDisabled()
+		) {
 		
 			// 1a. sessionCheck
 			if (!$error) {
@@ -95,7 +107,7 @@ class tx_wtspamshield_defaultmailform extends tslib_pibase {
 			if (!empty($error)) { // If error
 				$link = (!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['redirect.']['standardMailform']) ? $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['redirect.']['standardMailform'] : t3lib_div::getIndpEnv('TYPO3_SITE_URL')); // redirection link - take only Domain if no target in TS
 				header('HTTP/1.1 301 Moved Permanently'); 
-				header('Location: '.$link); 
+				header('Location: ' . $link); 
 				header('Connection: close');
 				return false; // no return, so no email will be sent
 			}
