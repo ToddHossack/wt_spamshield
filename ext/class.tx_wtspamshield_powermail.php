@@ -84,9 +84,17 @@ class tx_wtspamshield_powermail extends tslib_pibase {
 	function PM_SubmitBeforeMarkerHook($obj, $markerArray = array(), $sessiondata = array()) {
 		// config
 		$error = ''; // no error at the beginning
+
+		// get GPvars, downwards compatibility
+		if (t3lib_div::int_from_ver(TYPO3_version) < 4006000) {
+			$form = t3lib_div::GPvar('tx_powermail_pi1');
+		} else {
+			$form = t3lib_div::_GP('tx_powermail_pi1');
+		}
+
 		$this->messages = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['message.']; // Get messages from TS
 		$this->div = t3lib_div::makeInstance('tx_wtspamshield_div'); // Generate Instance for div method
-		
+
 		if ( // if spamshield should be activated
 			!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['powermail']) &&
 			$this->div->spamshieldIsNotDisabled()
@@ -121,6 +129,12 @@ class tx_wtspamshield_powermail extends tslib_pibase {
 				$method_honeypod_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypod'); // Generate Instance for honeypod method
 				$method_honeypod_instance->inputName = $this->honeypod_inputName; // name for input field
 				$error .= $method_honeypod_instance->checkHoney($sessiondata, $this->messages['honeypod']);
+			}
+			
+			// 1f. Akismet Check
+			if (!$error) {
+				$method_akismet_instance = t3lib_div::makeInstance('tx_wtspamshield_method_akismet'); // Generate Instance for Akismet method
+				$error .= $method_akismet_instance->checkAkismet($form, $this->messages['akismet'], 'powermail');
 			}
 			
 			// 2a. Safe log file

@@ -82,9 +82,16 @@ class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 		global $TSFE;
 		$cObj = $TSFE->cObj; // cObject
 		$error = ''; // no error at the beginning
-		$form = t3lib_div::GPvar('tx_veguestbook_pi1'); // get POST vars
+		
+		// get GPvars, downwards compatibility
+		if (t3lib_div::int_from_ver(TYPO3_version) < 4006000) {
+			$form = t3lib_div::GPvar('tx_veguestbook_pi1');
+		} else {
+			$form = t3lib_div::_GP('tx_veguestbook_pi1');
+		}
+		
 		$this->div = t3lib_div::makeInstance('tx_wtspamshield_div'); // Generate Instance for div method
-		$this->messages = $GLOBALS['TSFE']->tmpl->setup['wt_spamshield.']['message.']; // get messages from Backend
+		$this->messages = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['message.']; // get messages from Backend
 		
 		if ( // only if enabled for current page
 			!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['ve_guestbook']) &&
@@ -125,7 +132,7 @@ class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 			// 1f. Akismet Check
 			if (!$error) {
 				$method_akismet_instance = t3lib_div::makeInstance('tx_wtspamshield_method_akismet'); // Generate Instance for Akismet method
-				$error .= $method_akismet_instance->checkAkismet($form, $this->messages['akismet']);
+				$error .= $method_akismet_instance->checkAkismet($form, $this->messages['akismet'], 've_guestbook');
 			}
 			
 			// 2a. Safe log file
@@ -152,6 +159,7 @@ class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 				$obj->config['notify_mail'] = ''; // don't send a notify email
 				$obj->config['feedback_mail'] = false; // don't send a feedback mail
 				$obj->config['redirect_page'] = (intval($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['redirect.']['ve_guestbook']) > 0 ? $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['redirect.']['ve_guestbook'] : 1); // pid to redirect
+				unset($obj->tt_news); // remove superfluous tt_news piVars
 			}
 		}
 		return $saveData; // should always return something or error will happen

@@ -3,18 +3,23 @@
 ##
 
 plugin.wt_spamshield {
+	# cat=wt_spamshield main//0010; type=boolean; label= Comments active: Enable spamshield for comments
+	comments = 0
 
-	# cat=wt_spamshield main//0010; type=boolean; label= Mailform active: Enable spamshield for default mailform
+	# cat=wt_spamshield main//0020; type=boolean; label= Mailform active: Enable spamshield for default mailform
 	mailform = 0
 
-	# cat=wt_spamshield main//0020; type=boolean; label= Powermail active: Enable spamshield for powermail
+	# cat=wt_spamshield main//0030; type=boolean; label= ke_userregister active: Enable spamshield for ke_userregister
+	ke_userregister = 0
+
+	# cat=wt_spamshield main//0040; type=boolean; label= Powermail active: Enable spamshield for powermail
 	powermail = 0
 
-	# cat=wt_spamshield main//0030; type=boolean; label= ve_guestbook active: Enable spamshield for ve_guestbook
-	ve_guestbook = 0
+	# cat=wt_spamshield main//0050; type=boolean; label= t3_blog active: Enable spamshield for t3_blog
+	t3_blog = 0
 
-	# cat=wt_spamshield main//0040; type=boolean; label= Comments active: Enable spamshield for comments
-	comments = 0
+	# cat=wt_spamshield main//0060; type=boolean; label= ve_guestbook active: Enable spamshield for ve_guestbook
+	ve_guestbook = 0
 
 	# cat=wt_spamshield main//0200; type=text; label= Mailform Redirect: Redirect URL for default mailform
 	redirect_mailform =
@@ -29,7 +34,7 @@ plugin.wt_spamshield {
 	message.session1 = Sorry, but you have waited too long to send form values
 
 	# cat=wt_spamshield main//0320; type=text; label= Message Session 2: Message for Session 2
-	message.session1 = Please wait some seconds before sending form
+	message.session2 = Please wait some seconds before sending form
 
 	# cat=wt_spamshield main//0330; type=text; label= Message Session 3: Message for Session 3
 	message.session3 = No tstamp set in session
@@ -48,5 +53,4 @@ plugin.wt_spamshield {
 
 	# cat=wt_spamshield main//0380; type=text; label= Message honeypod: Message for honeypod
 	message.honeypod = Entry in honeypod recognized!
-
 }

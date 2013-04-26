@@ -34,26 +34,32 @@ class tx_wtspamshield_method_akismet extends tslib_pibase {
 	 *
 	 * @param	array		$form: Array with submitted values
 	 * @param	string		$note: Any existing errors
+	 * @param	string		$ext: Name of extension in which the spam was recognized
 	 * @return	string		$error: Return errormessage if error exists
 	 */
-	function checkAkismet($form, $note) {
+	function checkAkismet($form, $note, $ext) {
 		$conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
 		$error = '';
-		
+
 		if (isset($conf)) { // Only if Backendconfiguration exists in localconf
 			if ($conf['AkismetKey']) { // Only if enabled in backendconfiguration and key was set
+				$akismet_array = array();
 				
-				$akismet_array = array(
-					'author'    => $form['surname'],
-					'email'     => $form['email'],
-					'website'   => $form['homepage'],
-					'body'      => $form['entry'],
-					'permalink' => $form['homepage'], 
+				// Get field mapping from TS
+				$fields = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['fields.'][$ext.'.'];
+				foreach ($fields as $key => $value) {
+					if ($value && array_key_exists($value, $form)) {
+						$akismet_array[$key] = $form[$value];
+					}
+				}
+
+				$akismet_array += array(
 					'user_ip' => t3lib_div::getIndpEnv('REMOTE_ADDR'),
 					'user_agent' => t3lib_div::getIndpEnv('HTTP_USER_AGENT')
 				);
+
 				$akismet = new Akismet('http://' . t3lib_div::getIndpEnv('HTTP_HOST') . '/', $conf['AkismetKey'], $akismet_array); // new instance for akismet class
-				
+
 				if (!$akismet->isError() && $akismet->isSpam()) { // if akismet gives an error
 					$error = 'Akismet detected your entry as spam entry<br />'; // default value
 					
@@ -63,11 +69,11 @@ class tx_wtspamshield_method_akismet extends tslib_pibase {
 				}
 			}
 		}
-		
+
  		if (isset($error)) {
 			return $error; // return error
 		}
- 
+
 	}
 
 }

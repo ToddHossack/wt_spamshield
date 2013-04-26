@@ -31,11 +31,19 @@ class tx_wtspamshield_method_session extends tslib_pibase {
 	/**
 	 * Set Timestamp in session (when the form is rendered)
 	 *
+	 * @param boolean $forceValue Whether to force setting the timestampe in the session
 	 * @return	void
 	 */
-	function setSessionTime() {
-		$GLOBALS['TSFE']->fe_user->setKey('ses', 'wt_spamshield_form_tstamp', time()); // write timestamp to session
-		$GLOBALS['TSFE']->storeSessionData(); // store session
+	function setSessionTime($forceValue = TRUE) {
+		$conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
+
+		$timeStamp = intval($GLOBALS['TSFE']->fe_user->getKey('ses', 'wt_spamshield_form_tstamp'));
+		$isOutdated = ($timeStamp + $conf['SessionEndTime'] < time());
+
+		if ($forceValue || $isOutdated) {
+			$GLOBALS['TSFE']->fe_user->setKey('ses', 'wt_spamshield_form_tstamp', time()); // write timestamp to session
+			$GLOBALS['TSFE']->storeSessionData(); // store session
+		}
 	}
 	
 	/**
@@ -49,19 +57,19 @@ class tx_wtspamshield_method_session extends tslib_pibase {
 	function checkSessionTime($note1, $note2, $note3) {
 		$conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
 		
-		if (isset($conf)) { // Only if Backendconfiguration exists in localconf
-			if ($conf['useSessionCheck'] == 1) { // Only if enabled in backendconfiguration
+		if (isset($conf)) { // Only if Backend configuration exists in localconf
+			if ($conf['useSessionCheck'] == 1) { // Only if enabled in backend configuration
 				$sess_tstamp = intval($GLOBALS['TSFE']->fe_user->getKey('ses', 'wt_spamshield_form_tstamp')); // Get timestamp from session
 				
 				if ($sess_tstamp > 0) { // If there is a timestamp
-					if ((($sess_tstamp + $conf['SessionEndTime']) < time()) && ($conf['SessionEndTime'] > 0)) { // If it's to last
+					if ((($sess_tstamp + $conf['SessionEndTime']) < time()) && ($conf['SessionEndTime'] > 0)) { // If it's too slow
 						$error = 'Sorry, but you have waited too long to send form values<br />'; // default
 						
 						if ($note1) {
 							$error = $note1 . '<br />'; // value from tsconfig
 						}
 					} 
-					elseif ((($sess_tstamp + $conf['SessionStartTime']) > time()) && ($conf['SessionStartTime'] > 0)) { // If it's to fast
+					elseif ((($sess_tstamp + $conf['SessionStartTime']) > time()) && ($conf['SessionStartTime'] > 0)) { // If it's too fast
 						$error = 'Please wait some seconds before sending form<br />'; // default
 						
 						if ($note2) {
@@ -78,7 +86,7 @@ class tx_wtspamshield_method_session extends tslib_pibase {
 				
 			}
 		} else {
-			$error = 'Please update your extension (' . $this->extKey . ') in the Extension Manager<br />'; // No conf, so update ext in ext manager
+			$error = 'Please update your extension (' . $this->extKey . ') in the Extension Manager<br />'; // No conf, so update ext in EM
 		}
 			
 		return $error;

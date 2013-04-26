@@ -40,7 +40,7 @@ class tx_wtspamshield_method_httpcheck extends tslib_pibase {
 		$this->conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
 		
 		if (isset($this->conf) && isset($array)) { // Only if Backendconfiguration exists in localconf
-			if ($this->conf['usehttpCheck'] > 0) { // Only if enabled in backendconfiguration (disabled if 0)
+			if ($this->conf['usehttpCheck'] >= 0) { // Only if enabled in backendconfiguration (disabled if -1)
 				
 				$no_of_errors = 0; // init $errors
 				$error = sprintf('It\'s not allowed to use more than %s links within this form', $this->conf['usehttpCheck']) . '<br />'; // default note
