@@ -1,5 +1,7 @@
 <?php
-if (!defined ('TYPO3_MODE')) die ('Access denied.');
+if (!defined ('TYPO3_MODE')) {
+	die ('Access denied.');
+}
 
 $TCA['tx_wtspamshield_log'] = array (
     'ctrl' => $TCA['tx_wtspamshield_log']['ctrl'],
@@ -73,6 +75,50 @@ $TCA['tx_wtspamshield_log'] = array (
     ),
     'types' => array (
         '0' => array('showitem' => 'form;;;;1-1-1, errormsg, formvalues;;;richtext[], pageid, ip, useragent')
+    ),
+    'palettes' => array (
+        '1' => array('showitem' => '')
+    )
+);
+
+$TCA['tx_wtspamshield_blacklist'] = array (
+    'ctrl' => $TCA['tx_wtspamshield_blacklist']['ctrl'],
+    'interface' => array (
+        'showRecordFieldList' => 'type, value'
+    ),
+    'feInterface' => $TCA['tx_wtspamshield_log']['feInterface'],
+    'columns' => array (
+        /*'whitelist' => Array (
+            'exclude' => 1,
+            'label' => 'LLL:EXT:wt_spamshield/locallang_db.xml:tx_wtspamshield_blacklist.whitelist',
+            'config' => Array (
+                'type' => 'check',
+            )
+        ),*/
+		'type' => array (
+			'exclude' => 0,
+			'label' => 'LLL:EXT:wt_spamshield/locallang_db.xml:tx_wtspamshield_blacklist.type',
+			'config' => array (
+				'type' => 'select',
+				'items' => array (
+					array('LLL:EXT:wt_spamshield/locallang_db.xml:tx_wtspamshield_blacklist.type.0', 'ip'),
+					array('LLL:EXT:wt_spamshield/locallang_db.xml:tx_wtspamshield_blacklist.type.1', 'email'),
+				),
+				'size' => 1,
+				'maxitems' => 1,
+			)
+		),
+        'value' => Array (
+            'exclude' => 1,
+            'label' => 'LLL:EXT:wt_spamshield/locallang_db.xml:tx_wtspamshield_blacklist.value',
+            'config' => Array (
+                'type' => 'input',
+                'size' => '30',
+            )
+        ),
+    ),
+    'types' => array (
+        '0' => array('showitem' => 'type, value')
     ),
     'palettes' => array (
         '1' => array('showitem' => '')
