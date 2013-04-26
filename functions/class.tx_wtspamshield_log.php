@@ -1,4 +1,27 @@
 <?php
+/***************************************************************
+*  Copyright notice
+*
+*  (c) 2009 Alexander Kellner <Alexander.Kellner@einpraegsam.net>
+*  All rights reserved
+*
+*  This script is part of the TYPO3 project. The TYPO3 project is
+*  free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  The GNU General Public License can be found at
+*  http://www.gnu.org/copyleft/gpl.html.
+*
+*  This script is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  This copyright notice MUST APPEAR in all copies of the script!
+***************************************************************/
+
 require_once(PATH_tslib.'class.tslib_pibase.php');
 
 class tx_wtspamshield_log extends tslib_pibase {
@@ -7,7 +30,7 @@ class tx_wtspamshield_log extends tslib_pibase {
 	var $dbInsert = 1; // DB insert can be disabled for testing
 	
 	// start function for any extension
-	function dbLog($ext,$error,$formArray) {
+	function dbLog($ext, $error, $formArray) {
 		$conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
 		
 		if(isset($conf)) { // Only if Backendconfiguration exists in localconf

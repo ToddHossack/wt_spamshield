@@ -32,34 +32,28 @@ require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_m
 require_once(t3lib_extMgm::extPath('wt_spamshield').'functions/class.tx_wtspamshield_log.php');
 require_once(t3lib_extMgm::extPath('wt_spamshield').'functions/class.tx_wtspamshield_mail.php');
 
-class tx_wtspamshield_powermail extends tslib_pibase {
+class tx_wtspamshield_defaultmailform extends tslib_pibase {
 
-	var $honeypod_inputName = 'uid987654';
-	var $prefix_inputName = 'tx_powermail_pi1'; 
+	var $honeypod_inputName = 'wt_spamshield_honey';
 	
-	// Function PM_FormWrapMarkerHook() to manipulate whole formwrap
-	function PM_FormWrapMarkerHook($OuterMarkerArray, &$subpartArray, $conf, $obj) {
-		if (!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['powermail'])) { // if spamshield should be activated
-			// 1. Set session on form create
+	// Function generateSession() for first session
+	function generateSession() {
+		if (!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['standardMailform'])) { // only if spamshield should be activated for standardMailform
+			// Set session on form create
 			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
 			$method_session_instance->setSessionTime(); // Start setSessionTime() Function: Set session if form is loaded
-			
-			// 2. Add Honeypod
-			$method_honeypod_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypod'); // Generate Instance for honeypod method
-			$method_honeypod_instance->inputName = $this->honeypod_inputName; // name for input field
-			$method_honeypod_instance->prefix_inputName = $this->prefix_inputName; // prefix
-			$subpartArray['###POWERMAIL_CONTENT###'] .= $method_honeypod_instance->createHoneypod(); // Add honeypod to content
 		}
 	}
 
-	// Function PM_FieldWrapMarkerHook() to manipulate Fieldwraps
-	function PM_SubmitBeforeMarkerHook($obj, $markerArray = array(),$sessiondata = array()) {
+	
+	// Function sendFormmail_preProcessVariables() to stop mail if needed
+	function sendFormmail_preProcessVariables($form, $obj, $legacyConfArray=array()) {
 		// config
 		$error = ''; // no error at the beginning
 		$this->messages = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['message.']; // Get messages from TS
 		
-		if (!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['powermail'])) { // if spamshield should be activated
-			
+		if (!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['standardMailform'])) { // only if spamshield should be activated for standardMailform
+		
 			// 1a. sessionCheck
 			if (!$error) {
 				$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
@@ -69,44 +63,51 @@ class tx_wtspamshield_powermail extends tslib_pibase {
 			// 1b. httpCheck
 			if (!$error) {
 				$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for httpCheck method
-				$error .= $method_httpcheck_instance->httpCheck($sessiondata, $this->messages['httpcheck']);
+				$error .= $method_httpcheck_instance->httpCheck($form, $this->messages['httpcheck']);
 			}
 			
 			// 1c. uniqueCheck
 			if (!$error) {
 				$method_unique_instance = t3lib_div::makeInstance('tx_wtspamshield_method_unique'); // Generate Instance for uniqueCheck method
-				$error .= $method_unique_instance->main($sessiondata, $this->messages['uniquecheck']);
+				$error .= $method_unique_instance->main($form, $this->messages['uniquecheck']);
 			}
 			
 			// 1d. honeypodCheck
 			if (!$error) {
 				$method_honeypod_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypod'); // Generate Instance for honeypod method
 				$method_honeypod_instance->inputName = $this->honeypod_inputName; // name for input field
-				$error .= $method_honeypod_instance->checkHoney($sessiondata, $this->messages['honeypod']);
+				$error .= $method_honeypod_instance->checkHoney($form, $this->messages['honeypod']);
 			}
 			
 			// 2a. Safe log file
 			if ($error) {
 				$method_log_instance = t3lib_div::makeInstance('tx_wtspamshield_log'); // Generate Instance for logging method
-				$method_log_instance->dbLog('powermail', $error, $sessiondata);
+				$method_log_instance->dbLog('standardMailform', $error, $form);
 			}
 			
 			// 2b. Send email to admin
 			if ($error) {
 				$method_sendEmail_instance = t3lib_div::makeInstance('tx_wtspamshield_mail'); // Generate Instance for email method
-				$method_sendEmail_instance->sendEmail('powermail', $error, $sessiondata);
+				$method_sendEmail_instance->sendEmail('standardMailform', $error, $form);
 			}
 			
-			// 2c. Return Error message if exists
+			// 2c. Redirect and stop mail sending
 			if (!empty($error)) { // If error
-				return $error;
+				$link = (!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['redirect.']['standardMailform']) ? $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['redirect.']['standardMailform'] : t3lib_div::getIndpEnv('TYPO3_SITE_URL')); // redirection link - take only Domain if no target in TS
+				header('HTTP/1.1 301 Moved Permanently'); 
+				header('Location: '.$link); 
+				header('Connection: close');
+				return false; // no return, so no email will be sent
 			}
+			
 		}
+		
+		return $form; // default: return values to send email
 	}
 
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/ext/class.tx_wtspamshield_powermail.php']) {
-	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/ext/class.tx_wtspamshield_powermail.php']);
+if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/ext/class.tx_wtspamshield_defaultmailform.php']) {
+	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/ext/class.tx_wtspamshield_defaultmailform.php']);
 }
 ?>

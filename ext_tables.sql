@@ -18,3 +18,10 @@ CREATE TABLE tx_wtspamshield_log (
     PRIMARY KEY (uid),
     KEY parent (pid)
 );
+
+CREATE TABLE tx_wtspamshield_veguestbooktemp (
+    uid int(11) NOT NULL auto_increment,
+	tstamp int(11) DEFAULT '0' NOT NULL,
+    
+    PRIMARY KEY (uid)
+);

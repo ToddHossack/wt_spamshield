@@ -1,68 +1,123 @@
 <?php
+/***************************************************************
+*  Copyright notice
+*
+*  (c) 2009 Alexander Kellner <Alexander.Kellner@einpraegsam.net>
+*  All rights reserved
+*
+*  This script is part of the TYPO3 project. The TYPO3 project is
+*  free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  The GNU General Public License can be found at
+*  http://www.gnu.org/copyleft/gpl.html.
+*
+*  This script is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  This copyright notice MUST APPEAR in all copies of the script!
+***************************************************************/
+
 require_once(PATH_tslib.'class.tslib_pibase.php');
 require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_namecheck.php');
 require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_httpcheck.php');
 require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_session.php');
 require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_akismet.php');
+require_once(t3lib_extMgm::extPath('wt_spamshield').'lib/class.tx_wtspamshield_method_honeypod.php');
 require_once(t3lib_extMgm::extPath('wt_spamshield').'functions/class.tx_wtspamshield_log.php');
 require_once(t3lib_extMgm::extPath('wt_spamshield').'functions/class.tx_wtspamshield_mail.php');
 
 class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 
+	var $honeypod_inputName = 'uid987654';
+	var $prefix_inputName = 'tx_veguestbook_pi1'; 
+	
 	// Function for ve_guestbook form: set tstamp in session
-	function extraItemMarkerProcessor($markerArray, $row, $config, $all) {
-		if($all->code == 'FORM') { // If guestbookform is shown
+	function extraItemMarkerProcessor(&$markerArray, $row, $config, &$obj) {
+		if ($obj->code == 'FORM' && !empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['ve_guestbook'])) { // If guestbookform is shown AND if spamshield should be activated
+			// 1. Session check - generate session entry
 			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
 			$method_session_instance->setSessionTime(); // Start setSessionTime() Function: Set session if form is loaded
+			
+			// 2. Honeypod check - generate honeypot Input field
+			$method_honeypod_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypod'); // Generate Instance for honeypod method
+			$method_honeypod_instance->inputName = $this->honeypod_inputName; 
+			$method_honeypod_instance->prefix_inputName = $this->prefix_inputName; 
+			$obj->templateCode = str_replace('</form>', $method_honeypod_instance->createHoneypod().'</form>', $obj->templateCode); // add input field
 		}
 		return $markerArray; // return markerArray to ve_guestbook (without change)
 	}
 	
-	// Stop DB entry if spam - use Hook in ve_guestbook
-	function formvalidation($form) {
+	
+	// Function preEntryInsertProcessor is called from a guestbook hook and gives the possibility to disable the db entry of the GB
+	function preEntryInsertProcessor($saveData, &$obj) {
+		global $TSFE;
+		$cObj = $TSFE->cObj; // cObject
 		$error = ''; // no error at the beginning
+		$form = t3lib_div::GPvar('tx_veguestbook_pi1'); // get POST vars
 		$this->messages = $GLOBALS['TSFE']->tmpl->setup['wt_spamshield.']['message.']; // get messages from Backend
 		
-		// 1a. nameCheck
-		if(!$error) {
-			$method_namecheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_namecheck'); // Generate Instance for session method
-			$error .= $method_namecheck_instance->nameCheck($form['firstname'], $form['surname'], $this->messages['namecheck']);
+		if (!empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['enable.']['ve_guestbook'])) { // only if enabled for current page
+			// 1a. nameCheck
+			if(!$error) {
+				$method_namecheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_namecheck'); // Generate Instance for namecheck method
+				$error .= $method_namecheck_instance->nameCheck($form['firstname'], $form['surname'], $this->messages['namecheck']);
+			}
+			
+			// 1b. httpCheck
+			if(!$error) {
+				$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for http method
+				$error .= $method_httpcheck_instance->httpCheck($form, $this->messages['httpcheck']);
+			}
+			
+			// 1c. sessionCheck
+			if(!$error) {
+				$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
+				$error .= $method_session_instance->checkSessionTime($this->messages['session.']['note1'], $this->messages['session.']['note2'], $this->messages['session.']['note3']);
+			}
+			
+			// 1d. honeypodCheck
+			if (!$error) {
+				$method_honeypod_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypod'); // Generate Instance for honeypod method
+				$method_honeypod_instance->inputName = $this->honeypod_inputName; // name for input field
+				$error .= $method_honeypod_instance->checkHoney($form, $this->messages['honeypod']);
+			}
+			
+			// 1e. Akismet Check
+			if(!$error) {
+				$method_akismet_instance = t3lib_div::makeInstance('tx_wtspamshield_method_akismet'); // Generate Instance for Akismet method
+				$error .= $method_akismet_instance->checkAkismet($form, $this->messages['akismet']);
+			}
+			
+			// 2a. Safe log file
+			if($error) {
+				$method_log_instance = t3lib_div::makeInstance('tx_wtspamshield_log'); // Generate Instance for session method
+				$method_log_instance->dbLog('ve_guestbook', $error, $form);
+			}
+			
+			// 2b. Send email to admin
+			if($error) {
+				$method_sendEmail_instance = t3lib_div::makeInstance('tx_wtspamshield_mail'); // Generate Instance for session method
+				$method_sendEmail_instance->sendEmail('ve_guestbook', $error, $form);
+			}
+			
+			// 2c. Truncate ve_guestbook temp table
+			if($error) {
+				mysql_query("TRUNCATE TABLE tx_wtspamshield_veguestbooktemp"); // Truncate ve_guestbook temp table
+			}
+			
+			// 2d. Redirect if error happens
+			if(!empty($error)) { // If error
+				$saveData = array('tstamp' => time()); // add timestamp
+				$obj->strEntryTable = 'tx_wtspamshield_veguestbooktemp'; // change table for saving
+				$obj->config['redirect_page'] = (intval($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['redirect.']['ve_guestbook']) > 0 ? $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['redirect.']['ve_guestbook'] : 1); // pid to redirect
+			}
 		}
-		
-		// 1b. httpCheck
-		if(!$error) {
-			$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for session method
-			$error .= $method_httpcheck_instance->httpCheck($form, $this->messages['httpcheck']);
-		}
-		
-		// 1c. sessionCheck
-		if(!$error) {
-			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
-			$error .= $method_session_instance->checkSessionTime($this->messages['session.']['note1'], $this->messages['session.']['note2'], $this->messages['session.']['note3']);
-		}
-		
-		// 1d. Akismet Check
-		if(!$error) {
-			$method_akismet_instance = t3lib_div::makeInstance('tx_wtspamshield_method_akismet'); // Generate Instance for session method
-			$error .= $method_akismet_instance->checkAkismet($form, $this->messages['akismet']);
-		}
-		
-		// 2a. Safe log file
-		if($error) {
-			$method_log_instance = t3lib_div::makeInstance('tx_wtspamshield_log'); // Generate Instance for session method
-			$method_log_instance->dbLog('ve_guestbook',$error,$form);
-		}
-		
-		// 2b. Send email to admin
-		if($error) {
-			$method_sendEmail_instance = t3lib_div::makeInstance('tx_wtspamshield_mail'); // Generate Instance for session method
-			$method_sendEmail_instance->sendEmail('ve_guestbook',$error,$form);
-		}
-		
-		// 2c. Return Error message if exists
-		if(!empty($error)) { // If error
-			return $error;
-		}
+		return $saveData; // should always return something or error will happen
 	}
 
 }
