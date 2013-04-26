@@ -21,30 +21,30 @@ class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 	// Stop DB entry if spam - use Hook in ve_guestbook
 	function formvalidation($form) {
 		$error = ''; // no error at the beginning
-		$this->tsconfig = t3lib_BEfunc::getModTSconfig($GLOBALS['TSFE']->id, 'wt_spamshield'); // Get tsconfig from current page
+		$this->messages = $GLOBALS['TSFE']->tmpl->setup['wt_spamshield.']['message.']; // get messages from Backend
 		
 		// 1a. nameCheck
 		if(!$error) {
 			$method_namecheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_namecheck'); // Generate Instance for session method
-			$error .= $method_namecheck_instance->nameCheck($form['firstname'], $form['surname'], $this->tsconfig['properties']['message.']['namecheck']);
+			$error .= $method_namecheck_instance->nameCheck($form['firstname'], $form['surname'], $this->messages['namecheck']);
 		}
 		
 		// 1b. httpCheck
 		if(!$error) {
 			$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for session method
-			$error .= $method_httpcheck_instance->httpCheck($form, $this->tsconfig['properties']['message.']['httpcheck']);
+			$error .= $method_httpcheck_instance->httpCheck($form, $this->messages['httpcheck']);
 		}
 		
 		// 1c. sessionCheck
 		if(!$error) {
 			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
-			$error .= $method_session_instance->checkSessionTime($this->tsconfig['properties']['message.']['session.']['note1'], $this->tsconfig['properties']['message.']['session.']['note2'], $this->tsconfig['properties']['message.']['session.']['note3']);
+			$error .= $method_session_instance->checkSessionTime($this->messages['session.']['note1'], $this->messages['session.']['note2'], $this->messages['session.']['note3']);
 		}
 		
 		// 1d. Akismet Check
 		if(!$error) {
 			$method_akismet_instance = t3lib_div::makeInstance('tx_wtspamshield_method_akismet'); // Generate Instance for session method
-			$error .= $method_akismet_instance->checkAkismet($form, $this->tsconfig['properties']['message.']['akismet']);
+			$error .= $method_akismet_instance->checkAkismet($form, $this->messages['akismet']);
 		}
 		
 		// 2a. Safe log file

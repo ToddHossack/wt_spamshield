@@ -22,10 +22,10 @@ class tx_wtspamshield_log extends tslib_pibase {
 					'errormsg' => str_replace(array('<br>','<br />'),"\n",$error),
 					'formvalues' => t3lib_div::view_array($formArray),
 					'pageid' => $GLOBALS['TSFE']->id,
-					'ip' => $_SERVER['REMOTE_ADDR'],
-					'useragent' => $_SERVER['HTTP_USER_AGENT']
+					'ip' => t3lib_div::getIndpEnv('REMOTE_ADDR'),
+					'useragent' => t3lib_div::getIndpEnv('HTTP_USER_AGENT')
 				);
-				if($this->dbInsert) $GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_wtspamshield_log',$db_values); // DB entry
+				if($this->dbInsert) $GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_wtspamshield_log', $db_values); // DB entry
 				
 			}
 		}

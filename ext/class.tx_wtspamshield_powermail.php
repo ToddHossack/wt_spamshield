@@ -14,31 +14,30 @@ class tx_wtspamshield_powermail extends tslib_pibase {
 	function PM_FormWrapMarkerHook($obj) {
 		$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
 		$method_session_instance->setSessionTime(); // Start setSessionTime() Function: Set session if form is loaded
-		//echo $method_session_instance->checkSessionTime(); // check
 	}
 
 	// Function PM_FieldWrapMarkerHook() to manipulate Fieldwraps
 	function PM_SubmitBeforeMarkerHook($obj,$markerArray = array(),$sessiondata = array()) {
 		// config
 		$error = ''; // no error at the beginning
-		$this->tsconfig = t3lib_BEfunc::getModTSconfig($GLOBALS['TSFE']->id, 'wt_spamshield'); // Get tsconfig from current page
+		$this->messages = $GLOBALS['TSFE']->tmpl->setup['wt_spamshield.']['message.']; // Get messages from TS
 		
 		// 1a. sessionCheck
 		if (!$error) {
 			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
-			$error .= $method_session_instance->checkSessionTime($this->tsconfig['properties']['message.']['session.']['note1'], $this->tsconfig['properties']['message.']['session.']['note2'], $this->tsconfig['properties']['message.']['session.']['note3']);
+			$error .= $method_session_instance->checkSessionTime($this->messages['session.']['note1'], $this->messages['session.']['note2'], $this->messages['session.']['note3']);
 		}
 		
 		// 1b. httpCheck
 		if (!$error) {
 			$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for session method
-			$error .= $method_httpcheck_instance->httpCheck($sessiondata, $this->tsconfig['properties']['message.']['httpcheck']);
+			$error .= $method_httpcheck_instance->httpCheck($sessiondata, $this->messages['httpcheck']);
 		}
 		
 		// 1c. uniqueCheck
 		if (!$error) {
 			$method_unique_instance = t3lib_div::makeInstance('tx_wtspamshield_method_unique'); // Generate Instance for session method
-			$error .= $method_unique_instance->main($sessiondata, $this->tsconfig['properties']['message.']['uniquecheck']);
+			$error .= $method_unique_instance->main($sessiondata, $this->messages['uniquecheck']);
 		}
 		
 		// 2a. Safe log file

@@ -13,28 +13,53 @@ class tx_wtspamshield_mail extends tslib_pibase {
 		if(isset($conf)) { // Only if Backendconfiguration exists in localconf
 			if($conf['email_notify']) { // Only if email address is enabled
 				
-				// Create formvalues as string
-				$formvalue = '';
-				if(isset($formArray)) {
-					foreach ($formArray as $key => $value) {
-						$formvalue .= '<b>'.$key.':</b> '.$value."<br />\n";
-					}
-				}
+				// Prepare mail
+				$mailtext = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+					<html>
+						<head>
+						</head>
+						<body>
+							<table>
+								<tr>
+									<td><strong>Extension:</strong></td>
+									<td>'.$ext.'</td>
+								</tr>
+								<tr>
+									<td><strong>PID:</strong></td>
+									<td>'.$GLOBALS['TSFE']->id.'</td>
+								</tr>
+								<tr>
+									<td><strong>URL:</strong></td>
+									<td>'.t3lib_div::getIndpEnv('HTTP_HOST').'</td>
+								</tr>
+								<tr>
+									<td><strong>Error:</strong></td>
+									<td>'.$error.'</td>
+								</tr>
+								<tr>
+									<td><strong>IP:</strong></td>
+									<td>'.t3lib_div::getIndpEnv('REMOTE_ADDR').'</td>
+								</tr>
+								<tr>
+									<td><strong>Useragent:</strong></td>
+									<td>'.t3lib_div::getIndpEnv('HTTP_USER_AGENT').'</td>
+								</tr>
+								<tr>
+									<td valign=top><strong>Form values:</strong></td>
+									<td>'.t3lib_div::view_array($formArray).'</td>
+								</tr>
+							</table>
+						</body>
+					</html>
+				';
 				
-				// prepare mail and send it
-				$mailtext = '<b>Extension:</b> '.$ext.'<br />
-					<b>PID:</b> '.$GLOBALS['TSFE']->id.'<br /> 
-					<b>URL:</b> '.$_SERVER['HTTP_HOST'].'<br />
-					<b>Error:</b> '.$error.'<br />
-					<b>IP:</b> '.$_SERVER['REMOTE_ADDR'].'<br />
-					<b>Useragent:</b> '.$_SERVER['HTTP_USER_AGENT'].'<br />';
-				$mailtext .= $formvalue;
+				// Send mail
 				$this->htmlMail = t3lib_div::makeInstance('t3lib_htmlmail');
 				$this->htmlMail->start();
 				$this->htmlMail->recipient = $conf['email_notify'];
-				$this->htmlMail->subject = 'Spam recognized in '.$ext.' on '.$_SERVER['HTTP_HOST'];
+				$this->htmlMail->subject = 'Spam recognized in '.$ext.' on '.t3lib_div::getIndpEnv('HTTP_HOST');
 				$this->htmlMail->from_email = $conf['email_notify'];
-				$this->htmlMail->from_name = $conf['email_notify'];
+				$this->htmlMail->from_name = 'Spamshield';
 				$this->htmlMail->returnPath = $conf['email_notify'];
 				$this->htmlMail->setHTML($mailtext);
 				if($this->sendEmail) $this->htmlMail->send($conf['email_notify']);
