@@ -17,7 +17,7 @@ class tx_wtspamshield_powermail extends tslib_pibase {
 	}
 
 	// Function PM_FieldWrapMarkerHook() to manipulate Fieldwraps
-	function PM_SubmitBeforeMarkerHook($obj) {
+	function PM_SubmitBeforeMarkerHook($obj,$markerArray = array(),$sessiondata = array()) {
 		$error = ''; // no error at the beginning
 		
 		// 1. sessionCheck
@@ -29,19 +29,19 @@ class tx_wtspamshield_powermail extends tslib_pibase {
 		// 2. httpCheck
 		if(!$error) {
 			$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for session method
-			$error .= $method_httpcheck_instance->httpCheck($obj->pibase->piVars);
+			$error .= $method_httpcheck_instance->httpCheck($sessiondata);
 		}
 		
 		// 3. Safe log file
 		if($error) {
 			$method_log_instance = t3lib_div::makeInstance('tx_wtspamshield_log'); // Generate Instance for session method
-			$method_log_instance->dbLog('powermail',$error,$obj->pibase->piVars);
+			$method_log_instance->dbLog('powermail',$error,$sessiondata);
 		}
 		
 		// 4. Send email to admin
 		if($error) {
 			$method_sendEmail_instance = t3lib_div::makeInstance('tx_wtspamshield_mail'); // Generate Instance for session method
-			$method_sendEmail_instance->sendEmail('powermail',$error,$obj->pibase->piVars);
+			$method_sendEmail_instance->sendEmail('powermail',$error,$sessiondata);
 		}
 		
 		// 5. Return Error message if exists

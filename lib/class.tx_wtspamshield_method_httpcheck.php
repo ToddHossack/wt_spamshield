@@ -21,7 +21,7 @@ class tx_wtspamshield_method_httpcheck extends tslib_pibase {
 					preg_match_all('@'.$this->searchstring.'@', $value, $result); // give me all http:// of current string
 					if(isset($result[0])) $no_of_errors += count($result[0]); // add numbers of http:// to $errors
 				}
-
+				
 				if($no_of_errors > $this->conf['usehttpCheck']) return $error; // return message if more than allowed http enters
 				
 			}
