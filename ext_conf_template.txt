@@ -4,7 +4,7 @@ useNameCheck = 1
 # cat=basic//020; type=int [0-100]; label= Use HTTP Check: This option enables (or disables) a check for the string http. If you want only to allow 3x http, enter 3 (0 disables this option complete)
 usehttpCheck = 3
 
-# cat=basic//030; type=text; label= Use unique check: Enter different field keys (commaseparated), which should not equal - firstname and lastname for powermail (e.g. uid1,uid2)
+# cat=basic//030; type=text; label= Use unique check: Enter different field keys (commaseparated), which should not equal - firstname and lastname for powermail (e.g. uid1,uid2). You can add more conditions and split them with semicolon. If firstname uid1 should not be equal to address uid3 and lastname uid2 should not be equal to address uid3 but uid1 and uid2 could be the same (e.g. uid1,uid3[semicolon]uid2,uid3)
 notUnique = 
 
 # cat=basic//040; type=boolean; label= Use honeypod check: This option adds a non-visible input field, and if this field was filled out, than spam is recognized (e.g. 1)

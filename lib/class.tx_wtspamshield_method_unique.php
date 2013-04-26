@@ -22,7 +22,7 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-require_once(PATH_tslib.'class.tslib_pibase.php');
+require_once(PATH_tslib . 'class.tslib_pibase.php');
 
 class tx_wtspamshield_method_unique extends tslib_pibase {
 
@@ -35,19 +35,28 @@ class tx_wtspamshield_method_unique extends tslib_pibase {
 		$wholearray = array(); // clear array
 
 		if ($this->conf['notUnique']) { // only if there are values in the backend
-			$error = 'It\'s not allowed to use same entries in differnt fields<br />'; // default
-			if ($note) $error = $note.'<br />'; // get message from tsconfig
-			$fieldarray = t3lib_div::trimExplode(',', $this->conf['notUnique'], 1); // explode at ','
+			$error = 'It\'s not allowed to use same values in different fields<br />'; // default
+			if ($note) {
+				$error = $note . '<br />'; // get message from tsconfig
+			}
 			
-			if (is_array($fieldarray)) { // if there is an array
-				foreach ($fieldarray as $key => $value) { // one loop for every field
-					if ($sessiondata[$value]) $wholearray[] = $sessiondata[$value]; // if value exists in session, write value to an array
+			$myFieldArray = t3lib_div::trimExplode(';', $this->conf['notUnique'], 1); // explode at ';' for field groups
+			if (is_array($myFieldArray)) { // if there is an array
+				foreach ($myFieldArray as $myKey => $myValue) { // one loop for every field group
+					$wholearray = array(); // clear array
+					$fieldarray = t3lib_div::trimExplode(',', $myValue, 1); // explode at ','
+					if (is_array($fieldarray)) { // if there is an array
+						foreach ($fieldarray as $key => $value) { // one loop for every field
+							if ($sessiondata[$value]) $wholearray[] = $sessiondata[$value]; // if value exists in session, write value to an array
+						}
+					}
+					if (count($wholearray) != count(array_unique($wholearray))) { // if numbers of array values not numbers if array values without double entries
+						$found = 1; // found spam
+					}
 				}
 			}
-
-			if (count($wholearray) != count(array_unique($wholearray))) { // if numbers of array values not numbers if array values without double entries
-				$found = 1; // found spam
-			}
+			
+			
 		}
 		
 		if ($found) return $error;
