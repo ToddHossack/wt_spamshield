@@ -9,6 +9,7 @@ CREATE TABLE tx_wtspamshield_log (
     cruser_id int(11) DEFAULT '0' NOT NULL,
     deleted tinyint(4) DEFAULT '0' NOT NULL,
     
+    title text NOT NULL,
     form tinytext NOT NULL,
     errormsg text NOT NULL,
     pageid int(11) DEFAULT '0' NOT NULL,

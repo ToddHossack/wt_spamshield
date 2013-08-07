@@ -22,56 +22,128 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-require_once(PATH_tslib . 'class.tslib_pibase.php');
-
+/**
+ * abstract
+ *
+ * @author Ralf Zimmermann <ralf.zimmermann@tritum.de>
+ * @package tritum
+ * @subpackage wt_spamshield
+ */
 class tx_wtspamshield_method_abstract extends tslib_pibase {
 
-	var $LL = '';
-	var $L = false;
-	var $cObj;
+	/**
+	 * @var mixed
+	 */
+	public $ll = '';
 
-	function __construct() {
-		if($GLOBALS['LANG']->lang)
-			$this->L = $GLOBALS['LANG'];
-		else
-			$this->L = $GLOBALS['TSFE'];
+	/**
+	 * @var mixed
+	 */
+	public $l = FALSE;
 
-		$this->LL = $this->includeLocalLang();
-		$this->cObj = t3lib_div::makeInstance('tslib_cObj');
+	/**
+	 * @var mixed
+	 */
+	public $cObj;
+
+	/**
+	 * @var tx_wtspamshield_div
+	 */
+	protected $div;
+
+	/**
+	 * Constructor
+	 *
+	 */
+	public function __construct() {
+		if ($GLOBALS['LANG']->lang) {
+			$this->l = $GLOBALS['LANG'];
+		} else {
+			$this->l = $GLOBALS['TSFE'];
+		}
+
+		$this->ll = $this->includeLocalLang();
+
+		$t3Version = class_exists('t3lib_utility_VersionNumber')
+			? t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version)
+			: t3lib_div::int_from_ver(TYPO3_version);
+
+		if ($t3Version >= 6000000) {
+			$this->cObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('tslib_cObj');
+		} else {
+			$this->cObj = t3lib_div::makeInstance('tslib_cObj');
+		}
 	}
 
-	function getL10n($string) {
-		$message = $this->L->getLLL($string, $this->LL);
+	/**
+	 * getL10n
+	 *
+	 * @param string $string
+	 * @return string $message
+	 */
+	public function getL10n($string) {
+		$message = $this->l->getLLL($string, $this->ll);
 		return $message;
 	}
 
-	function includeLocalLang() {
-		$llFile = t3lib_extMgm::extPath('wt_spamshield') . 'Resources/Private/Language/locallang.xml';
-		$T3Version = class_exists('t3lib_utility_VersionNumber')
+	/**
+	 * includeLocalLang
+	 *
+	 * @return mixed $localLang
+	 */
+	public function includeLocalLang() {
+		$t3Version = class_exists('t3lib_utility_VersionNumber')
 			? t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version)
 			: t3lib_div::int_from_ver(TYPO3_version);
-		if ($T3Version < 4006000) {
+
+		if ($t3Version >= 6000000) {
+			$llFile = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('wt_spamshield') .
+				'Resources/Private/Language/locallang.xml';
+			$localLang = \TYPO3\CMS\Core\Utility\GeneralUtility::readLLfile($llFile, $this->l->lang);
+		} elseif ($t3Version >= 4006000) {
+			$llFile = t3lib_extMgm::extPath('wt_spamshield') . 'Resources/Private/Language/locallang.xml';
 			$xmlParser = t3lib_div::makeInstance('t3lib_l10n_parser_Llxml');
-			$LOCAL_LANG = $xmlParser->getParsedData($llFile, $this->L->lang);
+			$localLang = $xmlParser->getParsedData($llFile, $this->l->lang);
 		} else {
-			$LOCAL_LANG = t3lib_div::readLLXMLfile($llFile, $this->L->lang);
+			$llFile = t3lib_extMgm::extPath('wt_spamshield') . 'Resources/Private/Language/locallang.xml';
+			$localLang = t3lib_div::readLLXMLfile($llFile, $this->l->lang);
 		}
-		return $LOCAL_LANG;
+		return $localLang;
 	}
 
-	function renderCObj($section, $key) {
+	/**
+	 * renderCobj
+	 *
+	 * @param mixed $section
+	 * @param string $key
+	 * @return mixed $content
+	 */
+	public function renderCobj($section, $key) {
 		$cObjType = $section[$key];
-		$cObjvalues = $section[$key.'.'];
-		$LLL = $cObjvalues['value'];
-		$cObjvalues['value'] = $this->getL10n($LLL);
+		$cObjvalues = $section[$key . '.'];
+		$lll = $cObjvalues['value'];
+		$cObjvalues['value'] = $this->getL10n($lll);
 		$content = $this->cObj->cObjGetSingle($cObjType, $cObjvalues);
 		return $content;
 	}
 
+	/**
+	 * getDiv
+	 * 
+	 * @return	tx_wtspamshield_div
+	 */
+	public function getDiv() {
+		if (!isset($this->div)) {
+			$this->div = t3lib_div::makeInstance('tx_wtspamshield_div');
+		}
+		return $this->div;
+	}
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_abstract.php']) {
-	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_abstract.php']);
+if (defined('TYPO3_MODE')
+	&& isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_abstract.php'])
+) {
+	require_once ($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_abstract.php']);
 }
 
 ?>

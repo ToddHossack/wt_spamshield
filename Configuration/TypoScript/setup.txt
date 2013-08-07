@@ -1,4 +1,40 @@
 plugin.wt_spamshield {
+
+  validators {
+    standardMailform_new {
+      enable = {$plugin.wt_spamshield.validators.standardMailform_new.enable}
+      how_many_validators_can_fail = {$plugin.wt_spamshield.validators.standardMailform_new.how_many_validators_can_fail}
+    }
+    standardMailform_old {
+      enable = {$plugin.wt_spamshield.validators.standardMailform_old.enable}
+      how_many_validators_can_fail = {$plugin.wt_spamshield.validators.standardMailform_old.how_many_validators_can_fail}
+    }
+    powermail {
+      enable = {$plugin.wt_spamshield.validators.powermail.enable}
+      how_many_validators_can_fail = {$plugin.wt_spamshield.validators.powermail.how_many_validators_can_fail}
+    }
+    ve_guestbook {
+      enable = {$plugin.wt_spamshield.validators.ve_guestbook.enable}
+      how_many_validators_can_fail = {$plugin.wt_spamshield.validators.ve_guestbook.how_many_validators_can_fail}
+    }
+    comments {
+      enable = {$plugin.wt_spamshield.validators.comments.enable}
+      how_many_validators_can_fail = {$plugin.wt_spamshield.validators.comments.how_many_validators_can_fail}
+    }
+    t3_blog {
+      enable = {$plugin.wt_spamshield.validators.t3_blog.enable}
+      how_many_validators_can_fail = {$plugin.wt_spamshield.validators.t3_blog.how_many_validators_can_fail}
+    }
+    direct_mail_subscription {
+      enable = {$plugin.wt_spamshield.validators.direct_mail_subscription.enable}
+      how_many_validators_can_fail = {$plugin.wt_spamshield.validators.direct_mail_subscription.how_many_validators_can_fail}
+    }
+    ke_userregister {
+      enable = {$plugin.wt_spamshield.validators.ke_userregister.enable}
+      how_many_validators_can_fail = {$plugin.wt_spamshield.validators.ke_userregister.how_many_validators_can_fail}
+    }
+  }
+
   enable {
     standardMailform = {$plugin.wt_spamshield.mailform}
     powermail = {$plugin.wt_spamshield.powermail}
@@ -11,7 +47,7 @@ plugin.wt_spamshield {
 
   redirect {
     standardMailform = {$plugin.wt_spamshield.redirect_mailform}
-    ve_guestbook = {$plugin.wt_spamshield.ve_guestbook}
+    ve_guestbook = {$plugin.wt_spamshield.redirect_ve_guestbook}
   }
 
   honeypot {

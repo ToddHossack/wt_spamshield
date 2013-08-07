@@ -22,40 +22,58 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-require_once(t3lib_extMgm::extPath('wt_spamshield') . 'Classes/Methodes/class.tx_wtspamshield_method_abstract.php');
-
+/**
+ * name check
+ *
+ * @author Ralf Zimmermann <ralf.zimmermann@tritum.de>
+ * @package tritum
+ * @subpackage wt_spamshield
+ */
 class tx_wtspamshield_method_namecheck extends tx_wtspamshield_method_abstract {
 
-	var $extKey = 'wt_spamshield'; // Extension key of current extension
-	
 	/**
-	 * Function nameCheck() to disable the same first- and lastname
-	 *
-	 * @param	string		$name1: Content of Field Firstname
-	 * @param	string		$name2: Content of Field Lastname
-	 * @return	string		$error: Return errormessage if error exists
+	 * @var mixed
 	 */
-	function nameCheck($name1, $name2) {
-		$conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
-		
-		if (isset($conf)) { // Only if Backendconfiguration exists in localconf
-			if ($conf['useNameCheck'] == 1) { // Only if enabled in backendconfiguration
-				
-				if ($name1 === $name2 && $name1) { // if firstname is lastname and firstname exists
-					$error = $this->renderCObj($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['errors.'], 'nameCheck');
+	public $fieldValues;
+
+	/**
+	 * @var mixed
+	 */
+	public $additionalValues;
+
+	/**
+	 * @var string
+	 */
+	public $tsKey;
+
+	/**
+	 * Function validate() to disable the same first- and lastname
+	 *
+	 * @return string $error Return errormessage if error exists
+	 */
+	public function validate() {
+		$extConf = $this->getDiv()->getExtConf();
+
+		if (isset($extConf)) {
+			if ($extConf['useNameCheck'] == 1) {
+				if ($this->additionalValues['name1'] === $this->additionalValues['name2'] && $this->additionalValues['name1']) {
+					$tsConf = $this->getDiv()->getTsConf();
+					$error = $this->renderCobj($tsConf['errors.'], 'nameCheck');
 				}
 				if (isset($error)) {
 					return $error;
 				}
-				
 			}
 		}
+		return '';
 	}
 
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_namecheck.php']) {
-	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_namecheck.php']);
+if (defined('TYPO3_MODE')
+	&& isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_namecheck.php'])
+) {
+	require_once ($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_namecheck.php']);
 }
 
 ?>

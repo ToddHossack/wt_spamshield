@@ -22,68 +22,87 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-require_once(t3lib_extMgm::extPath('wt_spamshield') . 'Classes/Methodes/class.tx_wtspamshield_method_abstract.php');
-
+/**
+ * http check
+ *
+ * @author Ralf Zimmermann <ralf.zimmermann@tritum.de>
+ * @package tritum
+ * @subpackage wt_spamshield
+ */
 class tx_wtspamshield_method_httpcheck extends tx_wtspamshield_method_abstract {
 
-	var $extKey = 'wt_spamshield'; // Extension key of current extension
-	var $searchstring = 'http://|https://|ftp.'; // searchstring - former http://
-	
 	/**
-	 * Function nameCheck() to disable the same first- and lastname
-	 *
-	 * @param	array		$array: Array with submitted values
-	 * @return	string		$error: Return errormessage if error exists
+	 * @var mixed
 	 */
-	function httpCheck($array) {
-		$this->conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
-		
-		if (isset($this->conf) && isset($array)) { // Only if Backendconfiguration exists in localconf
-			if ($this->conf['usehttpCheck'] >= 0) { // Only if enabled in backendconfiguration (disabled if -1)
-				
-				$no_of_errors = 0; // init $errors
-				$error = $this->renderCObj($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['errors.'], 'httpCheck');
-				$error = sprintf($error, $this->conf['usehttpCheck']);
+	public $fieldValues;
 
-				foreach ((array) $array as $key => $value) { // One loop for every array entry
-					if (!is_array($value)) { // first level
-						
-						$result = array(); // init $result
-						preg_match_all('@' . $this->searchstring . '@', $value, $result); // give me all http:// of current string
+	/**
+	 * @var mixed
+	 */
+	public $additionalValues;
+
+	/**
+	 * @var string
+	 */
+	public $tsKey;
+
+	/**
+	 * @var string
+	 */
+	public $searchstring = 'http://|https://|ftp.';
+
+	/**
+	 * Function validate()
+	 *
+	 * @param mixed $array
+	 * @return string $error Return errormessage if error exists
+	 */
+	public function validate($array) {
+		$extConf = $this->getDiv()->getExtConf();
+
+		if (isset($extConf) && isset($this->fieldValues)) {
+			if ($extConf['usehttpCheck'] >= 0) {
+
+				$noOfErrors = 0;
+				$tsConf = $this->getDiv()->getTsConf();
+				$error = $this->renderCobj($tsConf['errors.'], 'httpCheck');
+				$error = sprintf($error, $extConf['usehttpCheck']);
+
+				foreach ((array) $this->fieldValues as $key => $value) {
+					if (!is_array($value)) {
+
+						$result = array();
+						preg_match_all('@' . $this->searchstring . '@', $value, $result);
 						if (isset($result[0])) {
-							$no_of_errors += count($result[0]); // add numbers of http:// to $errors
+							$noOfErrors += count($result[0]);
 						}
-						
-					} else { // second level
-						if (!is_array($value2)) { // second level
-						
-							foreach ((array) $array[$key] as $key2 => $value2 ) { // One loop for every array entry
-								
-								$result = array(); // init $result
-								preg_match_all('@' . $this->searchstring . '@', $value2, $result); // give me all http:// of current string
+					} else {
+						if (!is_array($value2)) {
+							foreach ((array) $this->fieldValues[$key] as $key2 => $value2 ) {
+								$result = array();
+								preg_match_all('@' . $this->searchstring . '@', $value2, $result);
 								if (isset($result[0])) {
-									$no_of_errors += count($result[0]); // add numbers of http:// to $errors
+									$noOfErrors += count($result[0]);
 								}
-								
 							}
-							
 						}
-					} 
-				
+					}
 				}
-				
-				if ($no_of_errors > $this->conf['usehttpCheck']) {
-					return $error; // return message if more than allowed http enters
+
+				if ($noOfErrors > $extConf['usehttpCheck']) {
+					return $error;
 				}
-				
 			}
 		}
+		return '';
 	}
 
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_httpcheck.php']) {
-	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_httpcheck.php']);
+if (defined('TYPO3_MODE')
+	&& isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_httpcheck.php'])
+) {
+	require_once ($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_httpcheck.php']);
 }
 
 ?>

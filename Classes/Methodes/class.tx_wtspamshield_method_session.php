@@ -22,64 +22,88 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-require_once(t3lib_extMgm::extPath('wt_spamshield') . 'Classes/Methodes/class.tx_wtspamshield_method_abstract.php');
-
+/**
+ * session check
+ *
+ * @author Ralf Zimmermann <ralf.zimmermann@tritum.de>
+ * @package tritum
+ * @subpackage wt_spamshield
+ */
 class tx_wtspamshield_method_session extends tx_wtspamshield_method_abstract {
 
-	var $extKey = 'wt_spamshield'; // Extension key of current extension
-	
+	/**
+	 * @var mixed
+	 */
+	public $fieldValues;
+
+	/**
+	 * @var mixed
+	 */
+	public $additionalValues;
+
+	/**
+	 * @var string
+	 */
+	public $tsKey;
+
 	/**
 	 * Set Timestamp in session (when the form is rendered)
 	 *
-	 * @param boolean $forceValue Whether to force setting the timestampe in the session
-	 * @return	void
+	 * @param boolean $forceValue Whether to force setting the
+	 *                            timestampe in the session
+	 * @return void
 	 */
-	function setSessionTime($forceValue = TRUE) {
-		$conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
+	public function setSessionTime($forceValue = TRUE) {
+		$extConf = $this->getDiv()->getExtConf();
 
-		$timeStamp = intval($GLOBALS['TSFE']->fe_user->getKey('ses', 'wt_spamshield_form_tstamp'));
-		$isOutdated = ($timeStamp + $conf['SessionEndTime'] < time());
+		if (isset($extConf)) {
+			$timeStamp = intval($GLOBALS['TSFE']->fe_user->getKey('ses', 'wt_spamshield_form_tstamp'));
+			$isOutdated = ($timeStamp + $extConf['SessionEndTime'] < time());
 
-		if ($forceValue || $isOutdated) {
-			$GLOBALS['TSFE']->fe_user->setKey('ses', 'wt_spamshield_form_tstamp', time()); // write timestamp to session
-			$GLOBALS['TSFE']->storeSessionData(); // store session
+			if ($forceValue || $isOutdated) {
+				$GLOBALS['TSFE']->fe_user->setKey('ses', 'wt_spamshield_form_tstamp', time());
+				$GLOBALS['TSFE']->storeSessionData();
+			}
 		}
 	}
-	
+
 	/**
 	 * Return Errormessage if session it runned out
-	 * @return	string		$error: Return errormessage if error exists
+	 * 
+	 * @return string $error Return errormessage if error exists
 	 */
-	function checkSessionTime() {
-		$conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
-		
-		if (isset($conf)) { // Only if Backend configuration exists in localconf
-			if ($conf['useSessionCheck'] == 1) { // Only if enabled in backend configuration
-				$sess_tstamp = intval($GLOBALS['TSFE']->fe_user->getKey('ses', 'wt_spamshield_form_tstamp')); // Get timestamp from session
-				
-				if ($sess_tstamp > 0) { // If there is a timestamp
-					if ((($sess_tstamp + $conf['SessionEndTime']) < time()) && ($conf['SessionEndTime'] > 0)) { // If it's too slow
-						$error = $this->renderCObj($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['errors.'], 'session_error_1');
-					} 
-					elseif ((($sess_tstamp + $conf['SessionStartTime']) > time()) && ($conf['SessionStartTime'] > 0)) { // If it's too fast
-						$error = $this->renderCObj($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['errors.'], 'session_error_2');
+	public function validate() {
+		$extConf = $this->getDiv()->getExtConf();
+		$error = '';
+
+		if (isset($extConf)) {
+			if ($extConf['useSessionCheck'] == 1) {
+				$sessTstamp = intval($GLOBALS['TSFE']->fe_user->getKey('ses', 'wt_spamshield_form_tstamp'));
+				$tsConf = $this->getDiv()->getTsConf();
+
+				if ($sessTstamp > 0) {
+					if ((($sessTstamp + $extConf['SessionEndTime']) < time()) && ($extConf['SessionEndTime'] > 0)) {
+						$error = $this->renderCobj($tsConf['errors.'], 'session_error_1');
+					} elseif ( (($sessTstamp + $extConf['SessionStartTime']) > time())
+								&& ($extConf['SessionStartTime'] > 0)
+					) {
+						$error = $this->renderCobj($tsConf['errors.'], 'session_error_2');
 					}
 				} else {
-					$error = $this->renderCObj($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['errors.'], 'session_error_3');
+					$error = $this->renderCobj($tsConf['errors.'], 'session_error_3');
 				}
-				
 			}
-		} else {
-			$error = 'Please update your extension (' . $this->extKey . ') in the Extension Manager<br />'; // No conf, so update ext in EM
 		}
-			
+
 		return $error;
 	}
 
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_session.php']) {
-	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_session.php']);
+if (defined('TYPO3_MODE')
+	&& isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_session.php'])
+) {
+	require_once ($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_session.php']);
 }
 
 ?>

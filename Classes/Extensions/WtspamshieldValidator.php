@@ -1,8 +1,10 @@
 <?php
+namespace TYPO3\CMS\Form\Validation;
+
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2009 Alexander Kellner <Alexander.Kellner@einpraegsam.net>
+*  (c) 2013 Ralf Zimmermann <Ralf.Zimmermann@tritum.de>
 *  All rights reserved
 *
 *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -23,18 +25,13 @@
 ***************************************************************/
 
 /**
- * defaultmailform hook (TYPO3 <= 4.5)
+ * defaultmailform wtspamshield rule (TYPO3 6.x)
  *
  * @author Ralf Zimmermann <ralf.zimmermann@tritum.de>
  * @package tritum
  * @subpackage wt_spamshield
  */
-class tx_wtspamshield_defaultmailform extends tslib_pibase {
-
-	/**
-	 * @var array
-	 */
-	protected $messages = array();
+class WtspamshieldValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
 
 	/**
 	 * @var tx_wtspamshield_div
@@ -59,12 +56,15 @@ class tx_wtspamshield_defaultmailform extends tslib_pibase {
 	/**
 	 * Constructor
 	 *
-	 * @return void
+	 * @param array $arguments
+	 * @return	void
 	 */
-	public function __construct() {
+	public function __construct($arguments) {
 		$this->tsConf = $this->getDiv()->getTsConf();
 		$honeypotInputName = $this->tsConf['honeypot.']['inputname.'][$this->tsKey];
+		$this->additionalValues['honeypotCheck']['prefixInputName'] = 'tx_form';
 		$this->additionalValues['honeypotCheck']['honeypotInputName'] = $honeypotInputName;
+		parent::__construct($arguments);
 	}
 
 	/**
@@ -74,58 +74,37 @@ class tx_wtspamshield_defaultmailform extends tslib_pibase {
 	 */
 	protected function getDiv() {
 		if (!isset($this->div)) {
-			$this->div = t3lib_div::makeInstance('tx_wtspamshield_div');
+			$this->div = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('tx_wtspamshield_div');
 		}
 		return $this->div;
 	}
 
 	/**
-	 * Function generateSession() is called if the form is
-	 * rendered (generate a session)
+	 * Returns TRUE if submitted value validates according to rule
 	 *
-	 * @param string $content
-	 * @param array $configuration
-	 * @return string
+	 * @return boolean
+	 * @see tx_form_System_Validate_Interface::isValid()
 	 */
-	public function generateSession($content, array $configuration = NULL) {
+	public function isValid() {
+
 		if ( $this->getDiv()->isActivated($this->tsKey) ) {
-			$this->getDiv()->getExtConf();
-			$forceValue = !(isset($configuration['ifOutdated']) && $configuration['ifOutdated']);
+			$error = '';
 
-				// Set session on form create
-			$methodSessionInstance = t3lib_div::makeInstance('tx_wtspamshield_method_session');
-			$methodSessionInstance->setSessionTime($forceValue);
-		}
+			if ($this->requestHandler->has($this->fieldName)) {
+				$value = $this->requestHandler->getByMethod($this->fieldName);
+				$validateArray = array(
+					$this->fieldName => $value
+				);
+				$error = $this->validate($validateArray);
+			}
 
-		return $content;
-	}
-
-	/**
-	 * Function sendFormmail_preProcessVariables() is called after
-	 * submit - stop mail if needed
-	 *
-	 * @param object $form Form Object
-	 * @param object $obj Parent Object
-	 * @param array $legacyConfArray legacy configuration
-	 * @return object $form
-	 */
-	public function sendFormmail_preProcessVariables($form, $obj, $legacyConfArray = array()) {
-		if ( $this->getDiv()->isActivated($this->tsKey) ) {
-			$error = $this->validate($form);
-
-				// 2c. Redirect and stop mail sending
 			if (!empty($error)) {
-				$link = (!empty($this->tsConf['redirect.'][$this->tsKey])
-					? $this->tsConf['redirect.'][$this->tsKey]
-					: t3lib_div::getIndpEnv('TYPO3_SITE_URL'));
-				header('HTTP/1.1 301 Moved Permanently');
-				header('Location: ' . $link);
-				header('Connection: close');
+				$this->setError('', strip_tags($error));
 				return FALSE;
 			}
 		}
 
-		return $form;
+		return TRUE;
 	}
 
 	/**
@@ -140,29 +119,21 @@ class tx_wtspamshield_defaultmailform extends tslib_pibase {
 			array(
 				'blacklistCheck',
 				'httpCheck',
-				'uniqueCheck',
-				'sessionCheck',
 				'honeypotCheck',
 			);
 
-		$tsValidators = $this->getDiv()->commaListToArray($this->tsConf['validators.'][$this->tsKey . '_old.']['enable']);
+		$tsValidators = $this->getDiv()->commaListToArray($this->tsConf['validators.'][$this->tsKey . '_new.']['enable']);
 
 		$processor = $this->getDiv()->getProcessor();
 		$processor->tsKey = $this->tsKey;
 		$processor->fieldValues = $fieldValues;
 		$processor->additionalValues = $this->additionalValues;
-		$processor->failureRate = intval($this->tsConf['validators.'][$this->tsKey . '_old.']['how_many_validators_can_fail']);
+		$processor->failureRate = intval($this->tsConf['validators.'][$this->tsKey . '_new.']['how_many_validators_can_fail']);
 		$processor->methodes = array_intersect($tsValidators, $availableValidators);
 
 		$error = $processor->validate();
 		return $error;
 	}
-}
 
-if (defined('TYPO3_MODE')
-	&& isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_defaultmailform.php'])
-) {
-	require_once ($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_defaultmailform.php']);
 }
-
 ?>

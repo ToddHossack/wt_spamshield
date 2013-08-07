@@ -7,7 +7,7 @@ tt_content.mailform {
   20.stdWrap {
     preUserFunc = tx_wtspamshield_defaultmailform->generateSession
     preUserFunc.ifOutdated = 1
-    innerWrap = | <input name="wt_spamshield_honey" type="text" style="position: absolute; margin: 0 0 0 -9999px;" value="" />
+    innerWrap = | <input name="uid987651" type="text" style="position: absolute; margin: 0 0 0 -9999px;" value="" />
     no_cache = 1
-	}
+  }
 }

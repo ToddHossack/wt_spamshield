@@ -23,30 +23,33 @@
 ***************************************************************/
 
 /**
+ * defaultmailform wtspamshield rule (TYPO3 4.6, 4.7)
  *
- * you can validate a form element by use of the wtspamshield rule
- * 
- * rules {
- *   1 = wtspamshield
- *   1 {
- *     breakOnError = 
- *     showMessage = 
- *     message = 
- *     error = 
- *     element = email
- *   }
- * 
-}
+ * @author Ralf Zimmermann <ralf.zimmermann@tritum.de>
+ * @package tritum
+ * @subpackage wt_spamshield
  */
-
-require_once(t3lib_extMgm::extPath('wt_spamshield') . 'Classes/Extensions/class.tx_wtspamshield_extensions_abstract.php');
-
 class tx_form_System_Validate_Wtspamshield extends tx_form_System_Validate_Abstract {
 
 	/**
-	 * @var tx_wtspamshield_extensions_abstract
+	 * @var tx_wtspamshield_div
 	 */
-	protected $abstract;
+	protected $div;
+
+	/**
+	 * @var mixed
+	 */
+	public $additionalValues = array();
+
+	/**
+	 * @var string
+	 */
+	public $tsKey = 'standardMailform';
+
+	/**
+	 * @var mixed
+	 */
+	public $tsConf;
 
 	/**
 	 * Constructor
@@ -55,28 +58,34 @@ class tx_form_System_Validate_Wtspamshield extends tx_form_System_Validate_Abstr
 	 * @return void
 	 */
 	public function __construct($arguments) {
+		$this->tsConf = $this->getDiv()->getTsConf();
+		$honeypotInputName = $this->tsConf['honeypot.']['inputname.'][$this->tsKey];
+		$this->additionalValues['honeypotCheck']['prefixInputName'] = 'tx_form';
+		$this->additionalValues['honeypotCheck']['honeypotInputName'] = $honeypotInputName;
 		parent::__construct($arguments);
 	}
 
 	/**
-	 * @return tx_wtspamshield_div
+	 * getDiv
+	 * 
+	 * @return	tx_wtspamshield_div
 	 */
-	protected function getAbstract() {
-		if (!isset($this->abstract)) {
-			$this->abstract = t3lib_div::makeInstance('tx_wtspamshield_extensions_abstract');
+	protected function getDiv() {
+		if (!isset($this->div)) {
+			$this->div = t3lib_div::makeInstance('tx_wtspamshield_div');
 		}
-		return $this->abstract;
+		return $this->div;
 	}
 
 	/**
 	 * Returns TRUE if submitted value validates according to rule
 	 *
-	 * @return boolean
+	 * @return	boolean
 	 * @see tx_form_System_Validate_Interface::isValid()
 	 */
 	public function isValid() {
 
-		if ( $this->getAbstract()->isActivated('standardMailform') ) {
+		if ( $this->getDiv()->isActivated($this->tsKey) ) {
 			$error = '';
 
 			if ($this->requestHandler->has($this->fieldName)) {
@@ -84,10 +93,10 @@ class tx_form_System_Validate_Wtspamshield extends tx_form_System_Validate_Abstr
 				$validateArray = array(
 					$this->fieldName => $value
 				);
-				$error = $this->processValidationChain($validateArray);
+				$error = $this->validate($validateArray);
 			}
 
-			if (!empty($error)) { // If error
+			if (!empty($error)) {
 				$this->setError('', strip_tags($error));
 				return FALSE;
 			}
@@ -97,56 +106,39 @@ class tx_form_System_Validate_Wtspamshield extends tx_form_System_Validate_Abstr
 	}
 
 	/**
+	 * validate
+	 * 
 	 * @param array $fieldValues
 	 * @return string
 	 */
-	protected function processValidationChain(array $fieldValues) {
-		$error = '';
+	protected function validate(array $fieldValues) {
 
-		// 1a. blacklistCheck
-		if (!$error) {
-			/** @var $method_blacklist_instance tx_wtspamshield_method_blacklist */
-			$method_blacklist_instance = t3lib_div::makeInstance('tx_wtspamshield_method_blacklist'); // Generate Instance for session method
-			$error .= $method_blacklist_instance->checkBlacklist($fieldValues);
-		}
+		$availableValidators = 
+			array(
+				'blacklistCheck',
+				'httpCheck',
+				'honeypotCheck',
+			);
 
-		// 1c. httpCheck
-		if (!$error) {
-			/** @var $method_httpcheck_instance tx_wtspamshield_method_httpcheck */
-			$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for httpCheck method
-			$error .= $method_httpcheck_instance->httpCheck($fieldValues);
-		}
+		$tsValidators = $this->getDiv()->commaListToArray($this->tsConf['validators.'][$this->tsKey . '_new.']['enable']);
 
-		// 1e. honeypotCheck
-		if (!$error) {
-			/** @var $method_honeypot_instance tx_wtspamshield_method_honeypot */
-			$honeypot_inputName = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['honeypot.']['inputname.']['standardMailform'];
-			$method_honeypot_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot'); // Generate Instance for honeypot method
-			$method_honeypot_instance->inputName = $honeypot_inputName; // name for input field
-			$error .= $method_honeypot_instance->checkHoney($fieldValues);
-		}
+		$processor = $this->getDiv()->getProcessor();
+		$processor->tsKey = $this->tsKey;
+		$processor->fieldValues = $fieldValues;
+		$processor->additionalValues = $this->additionalValues;
+		$processor->failureRate = intval($this->tsConf['validators.'][$this->tsKey . '_new.']['how_many_validators_can_fail']);
+		$processor->methodes = array_intersect($tsValidators, $availableValidators);
 
-		// 2a. Safe log file
-		if ($error) {
-			/** @var $method_log_instance tx_wtspamshield_log */
-			$method_log_instance = t3lib_div::makeInstance('tx_wtspamshield_log'); // Generate Instance for logging method
-			$method_log_instance->dbLog('standardMailform', $error, $fieldValues);
-		}
-
-		// 2b. Send email to admin
-		if ($error) {
-			/** @var $method_sendEmail_instance tx_wtspamshield_mail */
-			$method_sendEmail_instance = t3lib_div::makeInstance('tx_wtspamshield_mail'); // Generate Instance for email method
-			$method_sendEmail_instance->sendEmail('standardMailform', $error, $fieldValues);
-		}
-
+		$error = $processor->validate();
 		return $error;
 	}
 
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_form_System_Validate_Wtspamshield.php']) {
-	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_form_System_Validate_Wtspamshield.php']);
+if (defined('TYPO3_MODE')
+	&& isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_form_System_Validate_Wtspamshield.php'])
+) {
+	require_once ($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_form_System_Validate_Wtspamshield.php']);
 }
 
 ?>

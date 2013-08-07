@@ -3,21 +3,21 @@ if (!defined ('TYPO3_MODE')) {
 	die ('Access denied.');
 }
 
-$T3Version = class_exists('t3lib_utility_VersionNumber')
+$t3Version = class_exists('t3lib_utility_VersionNumber')
 	? t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version)
 	: t3lib_div::int_from_ver(TYPO3_version);
 
 t3lib_extMgm::addStaticFile($_EXTKEY, 'Configuration/TypoScript', 'Main Settings');
 t3lib_extMgm::addStaticFile($_EXTKEY, 'Configuration/TypoScript/Extensions/direct_mail_subscription', 'direct_mail_subscription');
-// only add static template for default mailform if T3 < 4.6
-if ($T3Version < 4006000) {
+	// only add static template for default mailform if T3 < 4.6
+if ($t3Version < 4006000) {
 	t3lib_extMgm::addStaticFile($_EXTKEY, 'Configuration/TypoScript/Extensions/defaultmailform', 'Default Mailform');
 }
 
 $TCA['tx_wtspamshield_log'] = array (
 	'ctrl' => array (
 		'title'     => 'LLL:EXT:wt_spamshield/Resources/Private/Language/locallang_db.xml:tx_wtspamshield_log',
-		'label'     => 'errormsg',
+		'label'     => 'title',
 		'tstamp'    => 'tstamp',
 		'crdate'    => 'crdate',
 		'cruser_id' => 'cruser_id',
@@ -27,7 +27,7 @@ $TCA['tx_wtspamshield_log'] = array (
 		'iconfile' => t3lib_extMgm::extRelPath($_EXTKEY) . 'Resources/Public/Icons/tx_wtspamshield_log.gif',
 	),
 	'feInterface' => array (
-		'fe_admin_fieldList' => 'form, errormsg, formvalues, pageid, ip, useragent',
+		'fe_admin_fieldList' => 'title, form, errormsg, formvalues, pageid, ip, useragent',
 	)
 );
 

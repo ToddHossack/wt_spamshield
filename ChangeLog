@@ -1,3 +1,38 @@
+1.1.0
+	2013-06-20
+	Ralf Zimmermann <ralf.zimmermann@tritum.de>
+
+	* TASK: test all extension and all checks with TYPO3 4.5, 4.7, 6.0, 6.1 with Selenium 2
+
+	2013-06-13
+	Ralf Zimmermann <ralf.zimmermann@tritum.de>
+
+	* TASK: some more code cleanup
+	* FIX: show error messages in email
+	* FIX: error with direct_mail_subscription
+	* FIX: ke_userregister compatibility (TYPO3 6.1)
+	* ADD feature #49392: Configurable spam rate for each extension
+
+	2013-06-10
+	Ralf Zimmermann <ralf.zimmermann@tritum.de>
+
+	* FIX: logging - useful title in the backend list view
+	* FIX: strip tags in errormessage log
+	* FIX: getDiv() calls
+	* TASK: remove extensions abstract/ move functions to tx_wtspamshield_div
+	* TASK: add getExtConf to tx_wtspamshield_div
+	* TASK: get TypoScript configuration from tx_wtspamshield_div
+
+	2013-06-05
+	Ralf Zimmermann <ralf.zimmermann@tritum.de>
+
+	* FIX #48622: Call to undefined method GeneralUtility::readLLXMLfile()
+	* FIX #47454: wt_spamshield and comments: No function?!
+	* FIX #48740: Redirect for ve_guestbook does not work under T3 6.1
+	* ADD feature: logging - useful title in the backend list view
+	* ADD feature: TYPO3 coding standards
+	* TASK: code cleanup
+
 1.0.2
 
 	2013-05-28
@@ -43,7 +78,7 @@
 	Bjoern Jacob <bjoern.jacob@tritum.de>
 
 	* Release of wt_spamshield 0.9.0
-	* ADD Feature #44233: Make Akismet available for powermail 1.x
+	* ADD feature #44233: Make Akismet available for powermail 1.x
 	* ADD feature #43994: t3_blog integration
 	* ADD feature #31962: ke_userregister integration
 	* ADD feature #12793: improved http-check

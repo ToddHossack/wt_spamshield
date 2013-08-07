@@ -22,142 +22,162 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-require_once(t3lib_extMgm::extPath('wt_spamshield') . 'Classes/Extensions/class.tx_wtspamshield_extensions_abstract.php');
-
+/**
+ * ke_userregister hook
+ *
+ * @author Ralf Zimmermann <ralf.zimmermann@tritum.de>
+ * @package tritum
+ * @subpackage wt_spamshield
+ */
 class tx_wtspamshield_ke_userregister extends tslib_pibase {
 
-	var $prefix_inputName = 'tx_keuserregister_pi1';
+	/**
+	 * @var tx_wtspamshield_div
+	 */
+	protected $div;
 
 	/**
-	 * @var tx_wtspamshield_extensions_abstract
+	 * @var mixed
 	 */
-	protected $abstract;
-	
+	public $additionalValues = array();
+
 	/**
+	 * @var string
+	 */
+	public $tsKey = 'ke_userregister';
+
+	/**
+	 * @var mixed
+	 */
+	public $tsConf;
+
+	/**
+	 * Constructor
+	 *
+	 * @return void
+	 */
+	public function __construct() {
+		$this->tsConf = $this->getDiv()->getTsConf();
+		$honeypotInputName = $this->tsConf['honeypot.']['inputname.'][$this->tsKey];
+		$this->additionalValues['honeypotCheck']['prefixInputName'] = 'tx_keuserregister_pi1';
+		$this->additionalValues['honeypotCheck']['honeypotInputName'] = $honeypotInputName;
+	}
+
+	/**
+	 * getDiv
+	 * 
 	 * @return tx_wtspamshield_div
 	 */
-	protected function getAbstract() {
-		if (!isset($this->abstract)) {
-			$this->abstract = t3lib_div::makeInstance('tx_wtspamshield_extensions_abstract');
+	protected function getDiv() {
+		if (!isset($this->div)) {
+			$this->div = t3lib_div::makeInstance('tx_wtspamshield_div');
 		}
-		return $this->abstract;
+		return $this->div;
 	}
 
 	/**
 	 * Function is called if form is rendered (set tstamp in session)
 	 *
-	 * @param	array		$markerArray: Array with markers
-	 * @param	object		$pObj: parent object
-	 * @param	array		$errors: Array with errors
-	 * @return	void
+	 * @param array &$markerArray Array with markers
+	 * @param object $pObj parent object
+	 * @param array $errors Array with errors
+	 * @return void
 	 */
-	function additionalMarkers(&$markerArray, $pObj, $errors) {
-		if ( $this->getAbstract()->isActivated('ke_userregister') ) {
-			// 1. check Extension Manager configuration
-			$this->getAbstract()->getDiv()->checkConf(); // Check Extension Manager configuration
+	public function additionalMarkers(&$markerArray, $pObj, $errors) {
+		if ( $this->getDiv()->isActivated($this->tsKey) ) {
+				// 1. check Extension Manager configuration
+			$this->getDiv()->getExtConf();
 
-			// 2. Session check - generate session entry
-			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
-			$method_session_instance->setSessionTime(); // Start setSessionTime() Function: Set session if form is loaded
+				// 2. Session check - generate session entry
+			$methodSessionInstance = t3lib_div::makeInstance('tx_wtspamshield_method_session');
+			$methodSessionInstance->setSessionTime();
 
-			// 3. Honeypot check - generate honeypot Input field
-			$honeypot_inputName = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['honeypot.']['inputname.']['ke_userregister'];
-			$method_honeypot_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot'); // Generate Instance for honeypot method
-			$method_honeypot_instance->inputName = $honeypot_inputName;
-			$method_honeypot_instance->prefix_inputName = $this->prefix_inputName;
-			$pObj->templateCode = str_replace('</form>', $method_honeypot_instance->createHoneypot() . '</form>', $pObj->templateCode); // add input field
+				// 3. Honeypot check - generate honeypot Input field
+			$methodHoneypotInstance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot');
+			$methodHoneypotInstance->additionalValues = $this->additionalValues['honeypotCheck'];
+			$pObj->templateCode = str_replace('</form>', $methodHoneypotInstance->createHoneypot() . '</form>', $pObj->templateCode);
 		}
 	}
 
 	/**
-	 * Function processSpecialEvaluations is called from a ke_userregister hook and gives the possibility to disable the db entry of the registration
+	 * Function processSpecialEvaluations is called from a
+	 * ke_userregister hook and gives the possibility to disable the
+	 * db entry of the registration
 	 *
-	 * @param	array		$errors: generated errors till now
-	 * @param	object		$pObj: parent object
-	 * @return	void
+	 * @param array &$errors generated errors till now
+	 * @param object &$pObj parent object
+	 * @return void
 	 */
 	public function processSpecialEvaluations(&$errors, &$pObj) {
-		// execute this hook only if there are no other errors
-		if (is_array($errors) && count($errors)) return;
+			// execute this hook only if there are no other errors
+		if (is_array($errors) && count($errors)) {
+			return;
+		}
 
-		$error = ''; // no error at the beginning
+		$error = '';
 
-		// get GPvars, downwards compatibility
-		if (t3lib_div::int_from_ver(TYPO3_version) < 4006000) {
+		$t3Version = class_exists('t3lib_utility_VersionNumber')
+			? t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version)
+			: t3lib_div::int_from_ver(TYPO3_version);
+
+			// get GPvars, downwards compatibility
+		if ($t3Version < 4004000){
 			$validateArray = t3lib_div::GPvar('tx_keuserregister_pi1');
 		} else {
 			$validateArray = t3lib_div::_GP('tx_keuserregister_pi1');
 		}
 
-		if ( $this->getAbstract()->isActivated('ke_userregister') ) {
+		if ( $this->getDiv()->isActivated($this->tsKey) ) {
 
-			$error = $this->processValidationChain($validateArray);
-			// 2c. Error message
+			$error = $this->validate($validateArray);
+				// 2c. Error message
 			if ($error) {
-				// Workaround: create field via TS and put it in HTML template of ke_userregister
+					// Workaround: create field via TS and put it in HTML
+					// template of ke_userregister
 				$errors['wt_spamshield'] = $error;
 			}
 		}
 	}
 
 	/**
+	 * validate
+	 * 
 	 * @param array $fieldValues
 	 * @return string
 	 */
-	protected function processValidationChain(array $fieldValues) {
-		$error = '';
+	protected function validate(array $fieldValues) {
+		$this->additionalValues['nameCheck']['name1'] = $fieldValues['first_name'];
+		$this->additionalValues['nameCheck']['name2'] = $fieldValues['last_name'];
 
-		// 1a. nameCheck
-		if (!$error) {
-			$method_namecheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_namecheck'); // Generate Instance for namecheck method
-			$error .= $method_namecheck_instance->nameCheck($fieldValues['first_name'], $fieldValues['last_name']);
-		}
+		$availableValidators = 
+			array(
+				'blacklistCheck',
+				'nameCheck',
+				'httpCheck',
+				'sessionCheck',
+				'honeypotCheck',
+				'akismetCheck',
+			);
 
-		// 1b. httpCheck
-		if (!$error) {
-			$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for http method
-			$error .= $method_httpcheck_instance->httpCheck($fieldValues);
-		}
+		$tsValidators = $this->getDiv()->commaListToArray($this->tsConf['validators.'][$this->tsKey . '.']['enable']);
 
-		// 1c. sessionCheck
-		if (!$error) {
-			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
-			$error .= $method_session_instance->checkSessionTime();
-		}
+		$processor = $this->getDiv()->getProcessor();
+		$processor->tsKey = $this->tsKey;
+		$processor->fieldValues = $fieldValues;
+		$processor->additionalValues = $this->additionalValues;
+		$processor->failureRate = intval($this->tsConf['validators.'][$this->tsKey . '.']['how_many_validators_can_fail']);
+		$processor->methodes = array_intersect($tsValidators, $availableValidators);
 
-		// 1d. honeypotCheck
-		if (!$error) {
-			$honeypot_inputName = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['honeypot.']['inputname.']['ke_userregister'];
-			$method_honeypot_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot'); // Generate Instance for honeypot method
-			$method_honeypot_instance->inputName = $honeypot_inputName; // name for input field
-			$error .= $method_honeypot_instance->checkHoney($fieldValues);
-		}
-
-		// 1e. Akismet Check
-		if (!$error) {
-			$method_akismet_instance = t3lib_div::makeInstance('tx_wtspamshield_method_akismet'); // Generate Instance for Akismet method
-			$error .= $method_akismet_instance->checkAkismet($fieldValues, 'ke_userregister');
-		}
-
-		// 2a. Safe log file
-		if ($error) {
-			$method_log_instance = t3lib_div::makeInstance('tx_wtspamshield_log'); // Generate Instance for session method
-			$method_log_instance->dbLog('ke_userregister', $error, $fieldValues);
-		}
-
-		// 2b. Send email to admin
-		if ($error) {
-			$method_sendEmail_instance = t3lib_div::makeInstance('tx_wtspamshield_mail'); // Generate Instance for session method
-			$method_sendEmail_instance->sendEmail('ke_userregister', $error, $fieldValues);
-		}
-
+		$error = $processor->validate();
 		return $error;
 	}
 
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_ke_userregister.php']) {
-	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_ke_userregister.php']);
+if (defined('TYPO3_MODE')
+	&& isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_ke_userregister.php'])
+) {
+	require_once ($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_ke_userregister.php']);
 }
 
 ?>

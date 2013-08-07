@@ -22,30 +22,49 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-require_once(PATH_tslib . 'class.tslib_pibase.php');
-
+/**
+ * mail
+ *
+ * @author Ralf Zimmermann <ralf.zimmermann@tritum.de>
+ * @package tritum
+ * @subpackage wt_spamshield
+ */
 class tx_wtspamshield_mail extends tslib_pibase {
 
-	var $extKey = 'wt_spamshield'; // Extension key of current extension
-	var $sendEmail = 1; // Disable email sending for testing
-	
+	/**
+	 * @var string
+	 */
+	public $extKey = 'wt_spamshield';
+
+	/**
+	 * @var integer
+	 */
+	public $sendEmail = 1;
+
 	/**
 	 * Function sendEmail sends a notify mail to the admin if spam was recognized
 	 * 
-	 * @param	string		$ext: Name of extension in which the spam was recognized
-	 * @param	string		$error: Error Message
-	 * @param	array		$formArray: Array with submitted values
-	 * @param	boolean		$sendPlain: Plain instead of HTML mails
-	 * @return	void
+	 * @param string $ext Name of extension in which the spam was recognized
+	 * @param integer $points 
+	 * @param string $errorMessages Error Message
+	 * @param array $formArray Array with submitted values
+	 * @param boolean $sendPlain Plain instead of HTML mails
+	 * @return void
 	 */
-	function sendEmail($ext, $error, $formArray, $sendPlain = 1) {
-		$conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]); // Get backend configuration of this extension
-		
-		if (isset($conf)) { // Only if Backendconfiguration exists in localconf
-			if (t3lib_div::validEmail($conf['email_notify'])) { // Only if email address is valid
-				if (!$sendPlain) { // html mail
-				
-					// Prepare mail
+	public function sendEmail($ext, $points, $errorMessages, $formArray, $sendPlain = 1) {
+		$conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]);
+
+		$t3Version = class_exists('t3lib_utility_VersionNumber')
+			? t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version)
+			: t3lib_div::int_from_ver(TYPO3_version);
+
+		if (isset($conf)) {
+			$errorMessages['points'] = 'Score: ' . $points;
+			$errorMessages = strip_tags(implode(' / ', $errorMessages));
+
+			if (t3lib_div::validEmail($conf['email_notify'])) {
+				if (!$sendPlain) {
+						// Prepare mail
 					$mailtext = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 						<html>
 							<head>
@@ -66,7 +85,7 @@ class tx_wtspamshield_mail extends tslib_pibase {
 									</tr>
 									<tr>
 										<td><strong>Error:</strong></td>
-										<td>' . $error . '</td>
+										<td>' . $errorMessages . '</td>
 									</tr>
 									<tr>
 										<td><strong>IP:</strong></td>
@@ -78,14 +97,14 @@ class tx_wtspamshield_mail extends tslib_pibase {
 									</tr>
 									<tr>
 										<td valign=top><strong>Form values:</strong></td>
-										<td>' . t3lib_div::view_array($formArray) . '</td>
+										<td>' . $formValues . '</td>
 									</tr>
 								</table>
 							</body>
 						</html>
 					';
-					
-					// Send mail
+
+						// Send mail
 					$this->htmlMail = t3lib_div::makeInstance('t3lib_htmlmail');
 					$this->htmlMail->start();
 					$this->htmlMail->recipient = $conf['email_notify'];
@@ -95,16 +114,14 @@ class tx_wtspamshield_mail extends tslib_pibase {
 					$this->htmlMail->returnPath = $conf['email_notify'];
 					$this->htmlMail->setHTML($mailtext);
 					if ($this->sendEmail) {
-						$this->htmlMail->send($conf['email_notify']); // send mail now
+						$this->htmlMail->send($conf['email_notify']);
 					}
-				
-				} else { // plaintextmail
-				
+				} else {
 					$info = array(
 						'Extension' => $ext,
 						'PID' => $GLOBALS['TSFE']->id,
 						'URL' => t3lib_div::getIndpEnv('HTTP_HOST'),
-						'Error' => $error,
+						'Error' => $errorMessages,
 						'IP' => t3lib_div::getIndpEnv('REMOTE_ADDR'),
 						'Useragent' => t3lib_div::getIndpEnv('HTTP_USER_AGENT'),
 					);
@@ -115,23 +132,22 @@ class tx_wtspamshield_mail extends tslib_pibase {
 					foreach ($formArray as $key => $value) {
 						$mailtext .= ' * ' . $key . ': ' . $value . chr(10);
 					}
-					
+
 					$to = $conf['email_notify'];
 					$from = '"Spamshield" <' . $conf['email_notify'] . '>';
 					$subject = 'Spam recognized in ' . $ext . ' on ' . t3lib_div::getIndpEnv('HTTP_HOST');
 					$headers = 'From: ' . $from;
-					//$headers .= 'Reply-To: ' . $from;
-					//t3lib_div::plainMailEncoded($to, $subject, $mailtext, $headers); // send plaintextmail
-					mail($to, $subject, $mailtext, $headers); // send plaintextmail
+					mail($to, $subject, $mailtext, $headers);
 				}
 			}
 		}
-			
 	}
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/System/class.tx_wtspamshield_mail.php']) {
-	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/System/class.tx_wtspamshield_mail.php']);
+if (defined('TYPO3_MODE')
+	&& isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/System/class.tx_wtspamshield_mail.php'])
+) {
+	require_once ($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/System/class.tx_wtspamshield_mail.php']);
 }
 
 ?>

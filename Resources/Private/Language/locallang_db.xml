@@ -7,6 +7,7 @@
 	<data type="array">
 		<languageKey index="default" type="array">
 			<label index="tx_wtspamshield_log">Spamshield log</label>
+			<label index="tx_wtspamshield_log.title">Title</label>
 			<label index="tx_wtspamshield_log.form">Used Extension</label>
 			<label index="tx_wtspamshield_log.errormsg">Error message</label>
 			<label index="tx_wtspamshield_log.formvalues">Form values</label>
@@ -22,6 +23,7 @@
 		</languageKey>
 		<languageKey index="de" type="array">
 			<label index="tx_wtspamshield_log">Spamshield Log</label>
+			<label index="tx_wtspamshield_log.title">Titel</label>
 			<label index="tx_wtspamshield_log.form">Verwendete Extension</label>
 			<label index="tx_wtspamshield_log.errormsg">Fehlermeldung</label>
 			<label index="tx_wtspamshield_log.formvalues">Formular Daten</label>

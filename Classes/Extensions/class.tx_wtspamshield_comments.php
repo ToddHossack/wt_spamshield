@@ -24,178 +24,151 @@
 ***************************************************************/
 
 /**
-* Implementation of Hook from tx_comments to make the wt_spamshield work
-* @author Lina Wolf <2010@lotypo3.de>
-*/
-
-/*
- * @author Ralf Zimmermann <ralf.zimmermann@tritum.de
+ * tx_comments hook
+ * 
+ * @author Lina Wolf <2010@lotypo3.de>
+ * @author Ralf Zimmermann <ralf.zimmermann@tritum.de>
+ * @package tritum
+ * @subpackage wt_spamshield
  */
-
-require_once(t3lib_extMgm::extPath('wt_spamshield') . 'Classes/Extensions/class.tx_wtspamshield_extensions_abstract.php');
-
 class tx_wtspamshield_comments extends tslib_pibase {
 
-	var $prefix_inputName = 'tx_comments_pi1';
-	var $points;
+	/**
+	 * @var tx_wtspamshield_div
+	 */
+	protected $div;
 
 	/**
+	 * @var mixed
+	 */
+	public $additionalValues = array();
+
+	/**
+	 * @var string
+	 */
+	public $tsKey = 'comments';
+
+	/**
+	 * @var mixed
+	 */
+	public $tsConf;
+
+	/**
+	 * Constructor
+	 *
+	 * @return void
+	 */
+	public function __construct() {
+		$this->tsConf = $this->getDiv()->getTsConf();
+		$honeypotInputName = $this->tsConf['honeypot.']['inputname.'][$this->tsKey];
+		$this->additionalValues['honeypotCheck']['prefixInputName'] = 'tx_comments_pi1';
+		$this->additionalValues['honeypotCheck']['honeypotInputName'] = $honeypotInputName;
+	}
+
+	/**
+	 * getDiv
+	 * 
 	 * @return tx_wtspamshield_div
 	 */
-	protected function getAbstract() {
-		if (!isset($this->abstract)) {
-			$this->abstract = t3lib_div::makeInstance('tx_wtspamshield_extensions_abstract');
+	protected function getDiv() {
+		if (!isset($this->div)) {
+			$this->div = t3lib_div::makeInstance('tx_wtspamshield_div');
 		}
-		return $this->abstract;
+		return $this->div;
 	}
-	
+
 	/**
 	* Implementation of Hook "form" from tx_comments (when the form is rendered)
-	* Adds the Honeypot input field to the marker ###JS_USER_DATA### (part of the default template)
-	* @param params array of 'pObject' => Name of extension 'markers' array of markers 'template' the template
-	* @param pObj 
-	* @returns the changed marker array
+	* Adds the Honeypot input field to the marker ###JS_USER_DATA###
+	* (part of the default template)
+	* 
+	* @param mixed $params array of 'pObject' => Name of extension 'markers'
+	* 								array of markers 'template' the template
+	* @param mixed $pObj 
+	* @return mixed $markers the changed marker array
 	*/
-	function form($params, $pObj) {
+	public function form($params, $pObj) {
 		$template = $params['template'];
 		$markers = $params['markers'];
-		
-		if ( $this->getAbstract()->isActivated('comments') ) {
-			
-			// 1. check Extension Manager configuration
-			$this->getAbstract()->getDiv()->checkConf(); // Check Extension Manager configuration
-			
-			// 2. Session check - generate session entry
-			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
-			$method_session_instance->setSessionTime(); // Start setSessionTime() Function: Set session if form is loaded
-			
-			// 3. Honeypot check - generate honeypot Input field
-			$honeypot_inputName = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['honeypot.']['inputname.']['comments'];
-			$method_honeypot_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot'); // Generate Instance for honeypot method
-			$method_honeypot_instance->inputName = $honeypot_inputName; 
-			$method_honeypot_instance->prefix_inputName = $this->prefix_inputName; 
-			$markers['###JS_USER_DATA###'] = $method_honeypot_instance->createHoneypot() . $markers['###JS_USER_DATA###'];	
+
+		if ( $this->getDiv()->isActivated( $this->tsKey ) ) {
+
+				// 1. check Extension Manager configuration
+			$this->getDiv()->getExtConf();
+
+				// 2. Session check - generate session entry
+			$methodSessionInstance = t3lib_div::makeInstance('tx_wtspamshield_method_session');
+			$methodSessionInstance->setSessionTime();
+
+				// 3. Honeypot check - generate honeypot Input field
+			$methodHoneypotInstance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot');
+			$methodHoneypotInstance->additionalValues = $this->additionalValues['honeypotCheck'];
+			$markers['###JS_USER_DATA###'] = $methodHoneypotInstance->createHoneypot() . $markers['###JS_USER_DATA###'];
 		}
 		return $markers;
 	}
-	
+
 	/**
 	* Implementation of Hook "externalSpamCheck" from tx_comments 
 	* Test for spam and addd 1000 spampoints for each Problem found
-	* @param params array of 'pObject' => Name of extension 'form' array of fields in the form 'points' excistent spam points
-	* @param pObj 
-	* @returns number of spam points increased by 100 for every problem that was found
+	* 
+	* @param mixed $params array of 'pObject' => Name of extension 'form'
+	* 							array of fields in the form 'points' excistent spam points
+	* @param mixed $pObj 
+	* @return integer $this->points number of spam points increased
+	* 									by 100 for every problem that was found
 	*/
-	function externalSpamCheck($params, $pObj) {
-		global $TSFE;
-		$cObj = $TSFE->cObj; // cObject
-		$error = ''; // no error at the beginning
+	public function externalSpamCheck($params, $pObj) {
+		$cObj = $GLOBALS['TSFE']->cObj;
+		$error = '';
 		$validateArray = $params['formdata'];
-		$this->points = $params['points'];
+		$points = $params['points'];
 
-		if ( $this->getAbstract()->isActivated('comments') ) {
-			$error = $this->processValidationChain($validateArray);
+		if ( $this->getDiv()->isActivated( $this->tsKey ) ) {
+			$points += $this->validate($validateArray);
 		}
-		
-		return $this->points; 
+
+		return $points;
 	}
 
 	/**
+	 * validate
+	 * 
 	 * @param array $fieldValues
 	 * @return string
 	 */
-	protected function processValidationChain(array $fieldValues) {
-		$error = '';
+	protected function validate(array $fieldValues) {
+		$this->additionalValues['nameCheck']['name1'] = $fieldValues['firstname'];
+		$this->additionalValues['nameCheck']['name2'] = $fieldValues['lastname'];
 
-		// 1a. blacklistCheck
-		if (!$error) {
-			$method_blacklist_instance = t3lib_div::makeInstance('tx_wtspamshield_method_blacklist'); // Generate Instance for session method
-			$error .= $method_blacklist_instance->checkBlacklist($fieldValues);
+		$availableValidators = 
+			array(
+				'blacklistCheck',
+				'nameCheck',
+				'httpCheck',
+				'sessionCheck',
+				'honeypotCheck',
+				'akismetCheck',
+			);
 
-			if (!empty($tempError)) {
-				$this->points += 1000;
-			}
-			$error .= $tempError;
-		}
-		
-		// 1b. nameCheck
-		if (!$error) {
-			$method_namecheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_namecheck'); // Generate Instance for namecheck method
-			$tempError = $method_namecheck_instance->nameCheck($fieldValues['firstname'], $fieldValues['lastname']);
-			
-			if (!empty($tempError)) {
-				$this->points += 1000;
-			}
-			$error .= $tempError;
-		}
-		
-		// 1c. httpCheck
-		if (!$error) {
-			$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for http method
-			$tempError = $method_httpcheck_instance->httpCheck($fieldValues);
-			
-			if (!empty($tempError)) {
-				$this->points += 1000;
-			}
-			$error .= $tempError;
-		}
-		
-		// 1d. sessionCheck
-		if (!$error) {
-			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
-			$tempError = $method_session_instance->checkSessionTime();
-			
-			if (!empty($tempError)) {
-				$this->points += 1000;
-			}
-			$error .= $tempError;
-		}
-		
-		
-		// 1e. honeypotCheck
-		if (!$error) {
-			$honeypot_inputName = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['honeypot.']['inputname.']['comments'];
-			$method_honeypot_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot'); // Generate Instance for honeypot method
-			$method_honeypot_instance->inputName = $honeypot_inputName; // name for input field
-			$tempError = $method_honeypot_instance->checkHoney($fieldValues);
-			
-			if (!empty($tempError)) {
-				$this->points += 1000;
-			}
-			$error .= $tempError;
-		}
-		
-		
-		// 1f. Akismet Check
-		if (!$error) {
-			$method_akismet_instance = t3lib_div::makeInstance('tx_wtspamshield_method_akismet'); // Generate Instance for Akismet method
-			$tempError =  $method_akismet_instance->checkAkismet($fieldValues, 'comments');
-			
-			if (!empty($tempError)) {
-				$this->points += 1000;
-			}
-			$error .= $tempError;
-		}
-		
-		
-		// 2a. Safe log file
-		if ($error) {
-			$method_log_instance = t3lib_div::makeInstance('tx_wtspamshield_log'); // Generate Instance for session method
-			$method_log_instance->dbLog('comments', $error, $fieldValues);
-		}
-		
-		// 2b. Send email to admin
-		if ($error) {
-			$method_sendEmail_instance = t3lib_div::makeInstance('tx_wtspamshield_mail'); // Generate Instance for session method
-			$method_sendEmail_instance->sendEmail('comments', $error, $fieldValues);
-		}
-		
-		return $error;
+		$tsValidators = $this->getDiv()->commaListToArray($this->tsConf['validators.'][$this->tsKey . '.']['enable']);
+
+		$processor = $this->getDiv()->getProcessor();
+		$processor->tsKey = $this->tsKey;
+		$processor->fieldValues = $fieldValues;
+		$processor->additionalValues = $this->additionalValues;
+		$processor->failureRate = intval($this->tsConf['validators.'][$this->tsKey . '.']['how_many_validators_can_fail']);
+		$processor->methodes = array_intersect($tsValidators, $availableValidators);
+
+		$processor->validate();
+		return $processor->currentFailures * 1000;
 	}
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_comments.php']) {
-	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_comments.php']);
+if (defined('TYPO3_MODE')
+	&& isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_comments.php'])
+) {
+	require_once ($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_comments.php']);
 }
 
 ?>

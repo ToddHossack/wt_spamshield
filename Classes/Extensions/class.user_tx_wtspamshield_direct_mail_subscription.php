@@ -22,37 +22,84 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 */
 
-require_once(t3lib_extMgm::extPath('wt_spamshield') . 'Classes/Extensions/class.tx_wtspamshield_extensions_abstract.php');
-
+/**
+ * direct_mail_subscription hook
+ *
+ * @author Ralf Zimmermann <ralf.zimmermann@tritum.de>
+ * @package tritum
+ * @subpackage wt_spamshield
+ */
 class user_tx_wtspamshield_direct_mail_subscription extends user_feAdmin {
 
-	var $prefix_inputName = 'FE[tt_address]'; 
-	var $spamshieldDisplayError;
+	/**
+	 * @var tx_wtspamshield_div
+	 */
+	protected $div;
 
 	/**
-	 * @var tx_wtspamshield_extensions_abstract
+	 * @var mixed
 	 */
-	protected $abstract;
-	
+	public $additionalValues = array();
+
 	/**
-	 * @return tx_wtspamshield_div
+	 * @var string
 	 */
-	protected function getAbstract() {
-		if (!isset($this->abstract)) {
-			$this->abstract = t3lib_div::makeInstance('tx_wtspamshield_extensions_abstract');
-		}
-		return $this->abstract;
+	public $tsKey = 'direct_mail_subscription';
+
+	/**
+	 * @var mixed
+	 */
+	public $tsConf;
+
+	/**
+	 * @var string
+	 */
+	public $spamshieldDisplayError;
+
+	/**
+	 * @var mixed
+	 */
+	public $parentConf;
+
+	/**
+	 * Constructor
+	 *
+	 * @return void
+	 */
+	public function __construct() {
+		$this->tsConf = $this->getDiv()->getTsConf();
+		$honeypotInputName = $this->tsConf['honeypot.']['inputname.'][$this->tsKey];
+		$this->additionalValues['honeypotCheck']['prefixInputName'] = 'FE[tt_address]';
+		$this->additionalValues['honeypotCheck']['honeypotInputName'] = $honeypotInputName;
 	}
 
-	function displayCreateScreen() {
+	/**
+	 * getDiv
+	 * 
+	 * @return tx_wtspamshield_div
+	 */
+	protected function getDiv() {
+		if (!isset($this->div)) {
+			$this->div = t3lib_div::makeInstance('tx_wtspamshield_div');
+		}
+		return $this->div;
+	}
 
-		if ( $this->getAbstract()->isActivated('direct_mail_subscription') ) {
-			$honeypot_inputName = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['honeypot.']['inputname.']['direct_mail_subscription'];
-			$method_honeypot_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot');
-			$method_honeypot_instance->inputName = $honeypot_inputName;
-			$method_honeypot_instance->prefix_inputName = $this->prefix_inputName;
-			$this->markerArray['###HIDDENFIELDS###'] .= $method_honeypot_instance->createHoneypot();
-			if($this->spamshieldDisplayError) {
+	/**
+	 * displayCreateScreen
+	 * 
+	 * @return mixed
+	 */
+	public function displayCreateScreen() {
+
+		if ( $this->getDiv()->isActivated($this->tsKey) ) {
+			if (isset($this->parentConf)) {
+				$this->conf['create'] = $this->parentConf;
+			}
+			$methodHoneypotInstance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot');
+			$methodHoneypotInstance->additionalValues = $this->additionalValues['honeypotCheck'];
+			$this->markerArray['###HIDDENFIELDS###'] .= $methodHoneypotInstance->createHoneypot();
+			if ($this->spamshieldDisplayError) {
 				$this->markerArray['###HIDDENFIELDS###'] .= $this->spamshieldDisplayError;
 			}
 		}
@@ -60,66 +107,65 @@ class user_tx_wtspamshield_direct_mail_subscription extends user_feAdmin {
 		return parent::displayCreateScreen();
 	}
 
-	function save() {
-		// config
-		$error = ''; // no error at the beginning
+	/**
+	 * save
+	 * 
+	 * @return	mixed
+	 */
+	public function save() {
+		$error = '';
 
-		if ( $this->getAbstract()->isActivated('direct_mail_subscription') ) {
+		if ( $this->getDiv()->isActivated($this->tsKey) ) {
 			$validateArray = $this->dataArr;
-			$error = $this->processValidationChain($validateArray);
+			$error = $this->validate($validateArray);
 
 			if (!empty($error)) {
-				// error handling
-				$method_log_instance = t3lib_div::makeInstance('tx_wtspamshield_log'); // Generate Instance for logging method
-				$method_log_instance->dbLog('direct_mail_subscription', $error, $validateArray);
-				//$this->error='###TEMPLATE_NO_PERMISSIONS###';
-				$this->saved=0;
-				$this->cmd='create';
+					// $this->error='###TEMPLATE_NO_PERMISSIONS###';
+				$this->saved = 0;
+				$this->cmd = 'create';
+				$this->parentConf = $this->conf['create'];
+				unset($this->conf['create']);
 				$this->spamshieldDisplayError = $error;
-			} else {
-				return parent::save();
 			}
-		} else {
-			return parent::save();
 		}
+
+		return parent::save();
 	}
 
 	/**
+	 * validate
+	 * 
 	 * @param array $fieldValues
 	 * @return string
 	 */
-	protected function processValidationChain(array $fieldValues) {
-		$error = '';
-	
-		// 1a. blacklistCheck
-		if (!$error) {
-			/** @var $method_blacklist_instance tx_wtspamshield_method_blacklist */
-			$method_blacklist_instance = t3lib_div::makeInstance('tx_wtspamshield_method_blacklist'); // Generate Instance for session method
-			$error .= $method_blacklist_instance->checkBlacklist($fieldValues);
-		}
+	protected function validate(array $fieldValues) {
 
-		// 1c. httpCheck
-		if (!$error) {
-			$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for httpCheck method
-			$error .= $method_httpcheck_instance->httpCheck($fieldValues);
-		}
+		$availableValidators = 
+			array(
+				'blacklistCheck',
+				'httpCheck',
+				'uniqueCheck',
+				'honeypotCheck',
+			);
 
-		// 1d. uniqueCheck
-		if (!$error) {
-			$method_unique_instance = t3lib_div::makeInstance('tx_wtspamshield_method_unique'); // Generate Instance for uniqueCheck method
-			$error .= $method_unique_instance->main($fieldValues);
-		}
+		$tsValidators = $this->getDiv()->commaListToArray($this->tsConf['validators.'][$this->tsKey . '.']['enable']);
 
-		// 1e. honeypotCheck
-		if (!$error) {
-			$honeypot_inputName = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['honeypot.']['inputname.']['direct_mail_subscription'];
-			$method_honeypot_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot'); // Generate Instance for honeypot method
-			$method_honeypot_instance->inputName = $honeypot_inputName; // name for input field
-			$error .= $method_honeypot_instance->checkHoney($fieldValues);
-		}
-		
+		$processor = $this->getDiv()->getProcessor();
+		$processor->tsKey = $this->tsKey;
+		$processor->fieldValues = $fieldValues;
+		$processor->additionalValues = $this->additionalValues;
+		$processor->failureRate = intval($this->tsConf['validators.'][$this->tsKey . '.']['how_many_validators_can_fail']);
+		$processor->methodes = array_intersect($tsValidators, $availableValidators);
+
+		$error = $processor->validate();
 		return $error;
 	}
+}
+
+if (defined('TYPO3_MODE')
+	&& isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.user_tx_wtspamshield_direct_mail_subscription.php'])
+) {
+	require_once ($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.user_tx_wtspamshield_direct_mail_subscription.php']);
 }
 
 ?>

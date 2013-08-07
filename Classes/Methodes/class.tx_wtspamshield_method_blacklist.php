@@ -22,30 +22,49 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-require_once(t3lib_extMgm::extPath('wt_spamshield') . 'Classes/Methodes/class.tx_wtspamshield_method_abstract.php');
-
+/**
+ * blacklist check
+ *
+ * @author Ralf Zimmermann <ralf.zimmermann@tritum.de>
+ * @package tritum
+ * @subpackage wt_spamshield
+ */
 class tx_wtspamshield_method_blacklist extends tx_wtspamshield_method_abstract {
 
-	public $extKey = 'wt_spamshield'; // Extension key of current extension
-	
 	/**
-	 * Function checkBlacklist() checks if IP or sender is blacklisted
-	 *
-	 * @var		array		Form values
-	 * @return	string		Return Error if blacklisted
+	 * @var mixed
 	 */
-	public function checkBlacklist($formValues) {
-		if ($this->isCurrentIPBlacklisted() || $this->isCurrentEmailBlacklisted($formValues)) {
-			return $this->renderCObj($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['errors.'], 'blacklist');
+	public $fieldValues;
+
+	/**
+	 * @var mixed
+	 */
+	public $additionalValues;
+
+	/**
+	 * @var string
+	 */
+	public $tsKey;
+
+	/**
+	 * Function validate() checks if IP or sender is blacklisted
+	 *
+	 * @return string Return Error if blacklisted
+	 */
+	public function validate() {
+		if ($this->isCurrentIpBlacklisted() || $this->isCurrentEmailBlacklisted($this->fieldValues)) {
+			$tsConf = $this->getDiv()->getTsConf();
+			return $this->renderCobj($tsConf['errors.'], 'blacklist');
 		}
+		return '';
 	}
 
 	/**
-	 * Function isCurrentIPBlacklisted() checks if current IP is blacklisted
+	 * Function isCurrentIpBlacklisted() checks if current IP is blacklisted
 	 *
-	 * @return	boolean
+	 * @return boolean
 	 */
-	private function isCurrentIPBlacklisted() {// Give me all fields in current fieldset, which are related to current content
+	private function isCurrentIpBlacklisted() {
 		$select = 'tx_wtspamshield_blacklist.uid';
 		$from = 'tx_wtspamshield_blacklist';
 		$where = 'tx_wtspamshield_blacklist.value = "' . t3lib_div::getIndpEnv('REMOTE_ADDR') . '"';
@@ -57,41 +76,41 @@ class tx_wtspamshield_method_blacklist extends tx_wtspamshield_method_abstract {
 		$limit = 1;
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery($select, $from, $where, $groupBy, $orderBy, $limit);
 
-		if ($res !== false) { // If there is a result
+		if ($res !== FALSE) {
 			$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 			if ($row['uid'] > 0) {
-				return true;
+				return TRUE;
 			}
 		}
-		return false;
+		return FALSE;
 	}
 
 	/**
 	 * Function isCurrentEmailBlacklisted() checks if current Email is blacklisted
 	 *
-	 * @var		array	Form values
-	 * @return	boolean
+	 * @param array $formValues Form values
+	 * @return boolean
 	 */
 	private function isCurrentEmailBlacklisted($formValues) {
 		$emails = array();
 		$pattern = "/(?:[a-z0-9!#$%&'*+=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+=?^_`{|}~-]+)*|\"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/";
 
-		// find emails in given fields
+			// find emails in given fields
 		foreach ((array) $formValues as $value) {
-			preg_match_all($pattern, $value, $matches); // find emails in given string
+			preg_match_all($pattern, $value, $matches);
 
-			if (is_array($matches[0])) { // if emails found
-				foreach ($matches[0] as $email) { // one loop for every found email
+			if (is_array($matches[0])) {
+				foreach ($matches[0] as $email) {
 					$emails[] = $email;
 				}
 			}
 		}
 
-		// check in database
+			// check in database
 		if (count($emails) == 0) {
-			return false;
+			return FALSE;
 		}
-		foreach ($emails as $email) { // one query for every given email
+		foreach ($emails as $email) {
 			$select = 'tx_wtspamshield_blacklist.uid';
 			$from = 'tx_wtspamshield_blacklist';
 			$where = 'tx_wtspamshield_blacklist.value = "' . $email . '"';
@@ -103,21 +122,23 @@ class tx_wtspamshield_method_blacklist extends tx_wtspamshield_method_abstract {
 			$limit = 1;
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery($select, $from, $where, $groupBy, $orderBy, $limit);
 
-			if ($res !== false) { // If there is a result
+			if ($res !== FALSE) {
 				$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 				if ($row['uid'] > 0) {
-					return true;
+					return TRUE;
 				}
 			}
 		}
 
-		return false;
+		return FALSE;
 	}
 
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_blacklist.php']) {
-	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_blacklist.php']);
+if (defined('TYPO3_MODE')
+	&& isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_blacklist.php'])
+) {
+	require_once ($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Methodes/class.tx_wtspamshield_method_blacklist.php']);
 }
 
 ?>

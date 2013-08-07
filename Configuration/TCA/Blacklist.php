@@ -10,13 +10,6 @@ $TCA['tx_wtspamshield_blacklist'] = array (
 	),
 	'feInterface' => $TCA['tx_wtspamshield_log']['feInterface'],
 	'columns' => array (
-		/*'whitelist' => Array (
-			'exclude' => 1,
-			'label' => 'LLL:EXT:wt_spamshield/Resources/Private/Language/locallang_db.xml:tx_wtspamshield_blacklist.whitelist',
-			'config' => Array (
-				'type' => 'check',
-			)
-		),*/
 		'type' => array (
 			'exclude' => 0,
 			'label' => 'LLL:EXT:wt_spamshield/Resources/Private/Language/locallang_db.xml:tx_wtspamshield_blacklist.type',

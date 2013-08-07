@@ -22,164 +22,174 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-require_once(t3lib_extMgm::extPath('wt_spamshield') . 'Classes/Extensions/class.tx_wtspamshield_extensions_abstract.php');
-
+/**
+ * ve_guestbook hook
+ *
+ * @author Ralf Zimmermann <ralf.zimmermann@tritum.de>
+ * @package tritum
+ * @subpackage wt_spamshield
+ */
 class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 
-	var $prefix_inputName = 'tx_veguestbook_pi1'; 
+	/**
+	 * @var tx_wtspamshield_div
+	 */
+	protected $div;
 
 	/**
-	 * @var tx_wtspamshield_extensions_abstract
+	 * @var mixed
 	 */
-	protected $abstract;
-	
+	public $additionalValues = array();
+
 	/**
+	 * @var string
+	 */
+	public $tsKey = 've_guestbook';
+
+	/**
+	 * @var mixed
+	 */
+	public $tsConf;
+
+	/**
+	 * Constructor
+	 *
+	 * @return void
+	 */
+	public function __construct() {
+		$this->tsConf = $this->getDiv()->getTsConf();
+		$honeypotInputName = $this->tsConf['honeypot.']['inputname.'][$this->tsKey];
+		$this->additionalValues['honeypotCheck']['prefixInputName'] = 'tx_veguestbook_pi1';
+		$this->additionalValues['honeypotCheck']['honeypotInputName'] = $honeypotInputName;
+	}
+
+	/**
+	 * getDiv
+	 * 
 	 * @return tx_wtspamshield_div
 	 */
-	protected function getAbstract() {
-		if (!isset($this->abstract)) {
-			$this->abstract = t3lib_div::makeInstance('tx_wtspamshield_extensions_abstract');
+	protected function getDiv() {
+		if (!isset($this->div)) {
+			$this->div = t3lib_div::makeInstance('tx_wtspamshield_div');
 		}
-		return $this->abstract;
+		return $this->div;
 	}
-	
+
 	/**
 	 * Function is called if form is rendered (set tstamp in session)
 	 *
-	 * @param	array		$markerArray: Array with markers
-	 * @param	array		$row: Values from database
-	 * @param	array		$config: configuration
-	 * @param	object		$obj: parent object
-	 * @return	array		$markerArray
+	 * @param array &$markerArray Array with markers
+	 * @param array $row Values from database
+	 * @param array $config configuration
+	 * @param object &$obj parent object
+	 * @return array $markerArray
 	 */
-	function extraItemMarkerProcessor(&$markerArray, $row, $config, &$obj) {
-		
-		if ( // If guestbookform is shown AND if spamshield should be activated
-			$obj->code == 'FORM' && 
-			$this->getAbstract()->isActivated('ve_guestbook')
-		) {
-			// 1. check Extension Manager configuration
-			$this->getAbstract()->getDiv()->checkConf(); // Check Extension Manager configuration
-			
-			// 2. Session check - generate session entry
-			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
-			$method_session_instance->setSessionTime(); // Start setSessionTime() Function: Set session if form is loaded
-			
-			// 3. Honeypot check - generate honeypot Input field
-			$honeypot_inputName = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['honeypot.']['inputname.']['ve_guestbook'];
-			$method_honeypot_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot'); // Generate Instance for honeypot method
-			$method_honeypot_instance->inputName = $honeypot_inputName; 
-			$method_honeypot_instance->prefix_inputName = $this->prefix_inputName; 
-			$obj->templateCode = str_replace('</form>', $method_honeypot_instance->createHoneypot() . '</form>', $obj->templateCode); // add input field
-		}
-		return $markerArray; // return markerArray to ve_guestbook (without change)
-	} 
-	
-	/**
-	 * Function preEntryInsertProcessor is called from a guestbook hook and gives the possibility to disable the db entry of the GB
-	 *
-	 * @param	array		$saveData: Values to save
-	 * @param	object		$obj: parent object
-	 * @return	array		$saveData
-	 */
-	function preEntryInsertProcessor($saveData, &$obj) {
-		global $TSFE;
-		$cObj = $TSFE->cObj; // cObject
-		$error = ''; // no error at the beginning
+	public function extraItemMarkerProcessor(&$markerArray, $row, $config, &$obj) {
 
-		if ( $this->getAbstract()->isActivated('ve_guestbook') ) {
-			// get GPvars, downwards compatibility
-			$T3Version = class_exists('t3lib_utility_VersionNumber')
+		if (
+			$obj->code == 'FORM' &&
+			$this->getDiv()->isActivated($this->tsKey)
+		) {
+				// 1. check Extension Manager configuration
+			$this->getDiv()->getExtConf();
+
+				// 2. Session check - generate session entry
+			$methodSessionInstance = t3lib_div::makeInstance('tx_wtspamshield_method_session');
+			$methodSessionInstance->setSessionTime();
+
+				// 3. Honeypot check - generate honeypot Input field
+			$methodHoneypotInstance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot');
+			$methodHoneypotInstance->additionalValues = $this->additionalValues['honeypotCheck'];
+			$obj->templateCode = str_replace('</form>', $methodHoneypotInstance->createHoneypot() . '</form>', $obj->templateCode);
+		}
+		return $markerArray;
+	}
+
+	/**
+	 * Function preEntryInsertProcessor is called from a guestbook hook
+	 * and gives the possibility to disable the db entry of the GB
+	 *
+	 * @param array $saveData Values to save
+	 * @param object &$obj parent object
+	 * @return array $saveData
+	 */
+	public function preEntryInsertProcessor($saveData, &$obj) {
+		$cObj = $GLOBALS['TSFE']->cObj;
+		$error = '';
+
+		if ( $this->getDiv()->isActivated($this->tsKey) ) {
+				// get GPvars, downwards compatibility
+			$t3Version = class_exists('t3lib_utility_VersionNumber')
 				? t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version)
 				: t3lib_div::int_from_ver(TYPO3_version);
-			if ($T3Version < 4006000) {
+			if ($t3Version < 4006000) {
 				$validateArray = t3lib_div::GPvar('tx_veguestbook_pi1');
 			} else {
 				$validateArray = t3lib_div::_GP('tx_veguestbook_pi1');
 			}
-			$error = $this->processValidationChain($validateArray);
-			
-			// 2c. Truncate ve_guestbook temp table
+			$error = $this->validate($validateArray);
+
+				// 2c. Truncate ve_guestbook temp table
 			if ($error) {
-				mysql_query('TRUNCATE TABLE tx_wtspamshield_veguestbooktemp'); // Truncate ve_guestbook temp table
+				mysql_query('TRUNCATE TABLE tx_wtspamshield_veguestbooktemp');
 			}
-			
-			// 2d. Redirect if error happens
-			if (!empty($error)) { // If error
-				$saveData = array('tstamp' => time()); // add timestamp
-				$obj->strEntryTable = 'tx_wtspamshield_veguestbooktemp'; // change table for saving
-				$obj->config['notify_mail'] = ''; // don't send a notify email
-				$obj->config['feedback_mail'] = false; // don't send a feedback mail
-				$obj->config['redirect_page'] = (intval($GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['redirect.']['ve_guestbook']) > 0 ? $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['redirect.']['ve_guestbook'] : 1); // pid to redirect
-				unset($obj->tt_news); // remove superfluous tt_news piVars
+
+				// 2d. Redirect if error happens
+			if (!empty($error)) {
+				$saveData = array('tstamp' => time());
+				$obj->strEntryTable = 'tx_wtspamshield_veguestbooktemp';
+				$obj->config['notify_mail'] = '';
+				$obj->config['feedback_mail'] = FALSE;
+				if ( intval($this->tsConf['redirect.'][$this->tsKey]) > 0) {
+					$obj->config['redirect_page'] =
+						intval($this->tsConf['redirect.'][$this->tsKey]);
+				} else {
+					$obj->config['redirect_page'] = $GLOBALS['TSFE']->tmpl->rootLine[0]['uid'];
+				}
+				unset($obj->tt_news);
 			}
 		}
-		return $saveData; // should always return something or error will happen
+		return $saveData;
 	}
 
 	/**
+	 * validate
+	 * 
 	 * @param array $fieldValues
 	 * @return string
 	 */
-	protected function processValidationChain(array $fieldValues) {
-		$error = '';
+	protected function validate(array $fieldValues) {
+		$this->additionalValues['nameCheck']['name1'] = $fieldValues['firstname'];
+		$this->additionalValues['nameCheck']['name2'] = $fieldValues['surname'];
 
-		// 1a. blacklistCheck
-		if (!$error) {
-			$method_blacklist_instance = t3lib_div::makeInstance('tx_wtspamshield_method_blacklist'); // Generate Instance for session method
-			$error .= $method_blacklist_instance->checkBlacklist($fieldValues);
-		}
+		$availableValidators = 
+			array(
+				'blacklistCheck',
+				'nameCheck',
+				'sessionCheck',
+				'httpCheck',
+				'honeypotCheck',
+				'akismetCheck',
+			);
 
-		// 1b. nameCheck
-		if (!$error) {
-			$method_namecheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_namecheck'); // Generate Instance for namecheck method
-			$error .= $method_namecheck_instance->nameCheck($fieldValues['firstname'], $fieldValues['surname']);
-		}
-		
-		// 1c. httpCheck
-		if (!$error) {
-			$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for http method
-			$error .= $method_httpcheck_instance->httpCheck($fieldValues);
-		}
-		
-		// 1d. sessionCheck
-		if (!$error) {
-			$method_session_instance = t3lib_div::makeInstance('tx_wtspamshield_method_session'); // Generate Instance for session method
-			$error .= $method_session_instance->checkSessionTime();
-		}
-		
-		// 1e. honeypotCheck
-		if (!$error) {
-			$honeypot_inputName = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.']['honeypot.']['inputname.']['ve_guestbook'];
-			$method_honeypot_instance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot'); // Generate Instance for honeypot method
-			$method_honeypot_instance->inputName = $honeypot_inputName; // name for input field
-			$error .= $method_honeypot_instance->checkHoney($fieldValues);
-		}
-		
-		// 1f. Akismet Check
-		if (!$error) {
-			$method_akismet_instance = t3lib_div::makeInstance('tx_wtspamshield_method_akismet'); // Generate Instance for Akismet method
-			$error .= $method_akismet_instance->checkAkismet($fieldValues, 've_guestbook');
-		}
-		
-		// 2a. Safe log file
-		if ($error) {
-			$method_log_instance = t3lib_div::makeInstance('tx_wtspamshield_log'); // Generate Instance for session method
-			$method_log_instance->dbLog('ve_guestbook', $error, $fieldValues);
-		}
-		
-		// 2b. Send email to admin
-		if ($error) {
-			$method_sendEmail_instance = t3lib_div::makeInstance('tx_wtspamshield_mail'); // Generate Instance for session method
-			$method_sendEmail_instance->sendEmail('ve_guestbook', $error, $fieldValues);
-		}
-		
+		$tsValidators = $this->getDiv()->commaListToArray($this->tsConf['validators.'][$this->tsKey . '.']['enable']);
+
+		$processor = $this->getDiv()->getProcessor();
+		$processor->tsKey = $this->tsKey;
+		$processor->fieldValues = $fieldValues;
+		$processor->additionalValues = $this->additionalValues;
+		$processor->failureRate = intval($this->tsConf['validators.'][$this->tsKey . '.']['how_many_validators_can_fail']);
+		$processor->methodes = array_intersect($tsValidators, $availableValidators);
+
+		$error = $processor->validate();
 		return $error;
 	}
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_ve_guestbook.php']) {
-	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_ve_guestbook.php']);
+if (defined('TYPO3_MODE')
+	&& isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_ve_guestbook.php'])
+) {
+	require_once ($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_ve_guestbook.php']);
 }
 
 ?>

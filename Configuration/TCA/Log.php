@@ -6,13 +6,22 @@ if (!defined ('TYPO3_MODE')) {
 $TCA['tx_wtspamshield_log'] = array (
 	'ctrl' => $TCA['tx_wtspamshield_log']['ctrl'],
 	'interface' => array (
-		'showRecordFieldList' => 'form,errormsg,formvalues,pageid,ip,useragent'
+		'showRecordFieldList' => 'title,form,errormsg,formvalues,pageid,ip,useragent'
 	),
 	'feInterface' => $TCA['tx_wtspamshield_log']['feInterface'],
 	'columns' => array (
 		'form' => array (
 			'exclude' => 1,
 			'label' => 'LLL:EXT:wt_spamshield/Resources/Private/Language/locallang_db.xml:tx_wtspamshield_log.form',
+			'config' => array (
+				'type' => 'input',
+				'size' => '30',
+				'eval' => 'required',
+			)
+		),
+		'title' => array (
+			'exclude' => 1,
+			'label' => 'LLL:EXT:wt_spamshield/Resources/Private/Language/locallang_db.xml:tx_wtspamshield_log.title',
 			'config' => array (
 				'type' => 'input',
 				'size' => '30',

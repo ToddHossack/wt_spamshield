@@ -23,95 +23,115 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-require_once(t3lib_extMgm::extPath('wt_spamshield') . 'Classes/Extensions/class.tx_wtspamshield_extensions_abstract.php');
-
+/**
+ * t3blog hook
+ *
+ * @author Bjoern Jacob <bjoern.jacob@tritum.de>
+ * @author Ralf Zimmermann <ralf.zimmermann@tritum.de>
+ * @package tritum
+ * @subpackage wt_spamshield
+ */
 class tx_wtspamshield_t3blog extends tslib_pibase {
 
 	/**
-	 * @var tx_wtspamshield_extensions_abstract
+	 * @var tx_wtspamshield_div
 	 */
-	protected $abstract;
-	
+	protected $div;
+
 	/**
+	 * @var mixed
+	 */
+	public $additionalValues = array();
+
+	/**
+	 * @var string
+	 */
+	public $tsKey = 't3_blog';
+
+	/**
+	 * @var mixed
+	 */
+	public $tsConf;
+
+	/**
+	 * Constructor
+	 *
+	 * @return void
+	 */
+	public function __construct() {
+		$this->tsConf = $this->getDiv()->getTsConf();
+	}
+
+	/**
+	 * getDiv
+	 * 
 	 * @return tx_wtspamshield_div
 	 */
-	protected function getAbstract() {
-		if (!isset($this->abstract)) {
-			$this->abstract = t3lib_div::makeInstance('tx_wtspamshield_extensions_abstract');
+	protected function getDiv() {
+		if (!isset($this->div)) {
+			$this->div = t3lib_div::makeInstance('tx_wtspamshield_div');
 		}
-		return $this->abstract;
+		return $this->div;
 	}
 
 	/**
 	* Implementation of Hook "insertNewComment" from t3_blog
-	* @param	array		$params The parameters
-	* @param	object		$reference The refering object
-	* @return	void
+	* 
+	* @param array &$params The parameters
+	* @param object &$reference The refering object
+	* @return void
 	*/
 	public function insertNewComment(&$params, &$reference) {
-		// config
-		$error = ''; // no error at the beginning
+		$error = '';
 
 		$validateArray = $params['data'];
 
-		if ( $this->getAbstract()->isActivated('t3_blog') ) {
+		if ( $this->getDiv()->isActivated($this->tsKey) ) {
 
-			$error = $this->processValidationChain($validateArray);
+			$error = $this->validate($validateArray);
 
 			if (!empty($error)) {
-				// Right now we cannot set errorMessage because it is protected, see forge.typo3.org #42615
-				//$reference->errorMessage = $error;
-				// Mark as spam
-				$GLOBALS['TYPO3_DB']->exec_UPDATEquery($params['table'], 'uid = '.$params['commentUid'], array('spam' => 1));
+					// Right now we cannot set errorMessage because it is
+					// protected, see forge.typo3.org #42615
+					// $reference->errorMessage = $error;
+					// Mark as spam
+				$GLOBALS['TYPO3_DB']->exec_UPDATEquery($params['table'], 'uid = ' . $params['commentUid'], array('spam' => 1));
 			}
 		}
 	}
 
 	/**
+	 * validate
+	 * 
 	 * @param array $fieldValues
 	 * @return string
 	 */
-	protected function processValidationChain(array $fieldValues) {
-		$error = '';
+	protected function validate(array $fieldValues) {
 
-		// 1a. blacklistCheck - we don't need it since t3_blog has already an own implementation
-		
-		// 1b. nameCheck - doesn't make sense since there are no 2 fields for first and last name
-		
-		// 1c. httpCheck
-		if (!$error) {
-			$method_httpcheck_instance = t3lib_div::makeInstance('tx_wtspamshield_method_httpcheck'); // Generate Instance for http method
-			$error .= $method_httpcheck_instance->httpCheck($fieldValues);
-		}
-		
-		// 1d. sessionCheck - not possible, can't start time since there is no hook when form is rendered
-		
-		// 1e. honeypotCheck - not possible, can't insert form field since there is no hook when form is rendered
-		
-		// 1f. Akismet Check
-		if (!$error) {
-			$method_akismet_instance = t3lib_div::makeInstance('tx_wtspamshield_method_akismet'); // Generate Instance for Akismet method
-			$error .= $method_akismet_instance->checkAkismet($fieldValues, 't3_blog');
-		}
+		$availableValidators = 
+			array(
+				'httpCheck',
+				'akismetCheck',
+			);
 
-		// 2a. Safe log file
-		if ($error) {
-			$method_log_instance = t3lib_div::makeInstance('tx_wtspamshield_log'); // Generate Instance for logging method
-			$method_log_instance->dbLog('t3_blog', $error, $fieldValues);
-		}
-		
-		// 2b. Send email to admin
-		if ($error) {
-			$method_sendEmail_instance = t3lib_div::makeInstance('tx_wtspamshield_mail'); // Generate Instance for email method
-			$method_sendEmail_instance->sendEmail('t3_blog', $error, $fieldValues);
-		}
+		$tsValidators = $this->getDiv()->commaListToArray($this->tsConf['validators.'][$this->tsKey . '.']['enable']);
 
+		$processor = $this->getDiv()->getProcessor();
+		$processor->tsKey = $this->tsKey;
+		$processor->fieldValues = $fieldValues;
+		$processor->additionalValues = $this->additionalValues;
+		$processor->failureRate = intval($this->tsConf['validators.'][$this->tsKey . '.']['how_many_validators_can_fail']);
+		$processor->methodes = array_intersect($tsValidators, $availableValidators);
+
+		$error = $processor->validate();
 		return $error;
 	}
 }
 
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_t3blog.php']) {
-	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_t3blog.php']);
+if (defined('TYPO3_MODE')
+	&& isset($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_t3blog.php'])
+) {
+	require_once ($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/wt_spamshield/Classes/Extensions/class.tx_wtspamshield_t3blog.php']);
 }
 
 ?>
