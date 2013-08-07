@@ -1,0 +1,152 @@
+plugin.wt_spamshield {
+  enable {
+    standardMailform = {$plugin.wt_spamshield.mailform}
+    powermail = {$plugin.wt_spamshield.powermail}
+    ve_guestbook = {$plugin.wt_spamshield.ve_guestbook}
+    comments = {$plugin.wt_spamshield.comments}
+    t3_blog = {$plugin.wt_spamshield.t3_blog}
+    direct_mail_subscription = {$plugin.wt_spamshield.direct_mail_subscription}
+    ke_userregister = {$plugin.wt_spamshield.ke_userregister}
+  }
+
+  redirect {
+    standardMailform = {$plugin.wt_spamshield.redirect_mailform}
+    ve_guestbook = {$plugin.wt_spamshield.ve_guestbook}
+  }
+
+  honeypot {
+    css {
+      inputStyle = {$plugin.wt_spamshield.honeypot.css.inputStyle}
+      inputClass = {$plugin.wt_spamshield.honeypot.css.inputClass}
+    }
+
+    explanation = TEXT
+    explanation {
+      # must be an entry in localconf.xml
+      value = honeypot.explanation
+      wrap = <label class="wt_spamshield_label wt_spamshield_honey" style="position:absolute; margin:0 0 0 -999em;">|</label>
+    }
+
+    inputname {
+      standardMailform = {$plugin.wt_spamshield.honeypot.inputname.standardMailform}
+      powermail = {$plugin.wt_spamshield.honeypot.inputname.powermail}
+      ve_guestbook = {$plugin.wt_spamshield.honeypot.inputname.ve_guestbook}
+      comments = {$plugin.wt_spamshield.honeypot.inputname.comments}
+      direct_mail_subscription = {$plugin.wt_spamshield.honeypot.inputname.direct_mail_subscription}
+      ke_userregister = {$plugin.wt_spamshield.honeypot.inputname.ke_userregister}
+    }
+  }
+
+  # at the moment we only support TEXT
+  errors {
+    blacklist = TEXT
+    blacklist {
+      # must be an entry in localconf.xml
+      value = blacklist.error
+      wrap = <p class="wt_spamshield_error">|</p>
+    }
+    akismet = TEXT
+    akismet {
+      # must be an entry in localconf.xml
+      value = akismet.error
+      wrap = <p class="wt_spamshield_error">|</p>
+    }
+    honeypot = TEXT
+    honeypot {
+      # must be an entry in localconf.xml
+      value = honeypot.error
+      wrap = <p class="wt_spamshield_error">|</p>
+    }
+    httpCheck = TEXT
+    httpCheck {
+      # must be an entry in localconf.xml
+      value = httpCheck.error
+      wrap = <p class="wt_spamshield_error">|</p>
+    }
+    nameCheck = TEXT
+    nameCheck {
+      # must be an entry in localconf.xml
+      value = nameCheck.error
+      wrap = <p class="wt_spamshield_error">|</p>
+    }
+    session_error_1 = TEXT
+    session_error_1 {
+      # must be an entry in localconf.xml
+      value = session.error.1
+      wrap = <p class="wt_spamshield_error">|</p>
+    }
+    session_error_2 = TEXT
+    session_error_2 {
+      # must be an entry in localconf.xml
+      value = session.error.2
+      wrap = <p class="wt_spamshield_error">|</p>
+    }
+    session_error_3 = TEXT
+    session_error_3 {
+      # must be an entry in localconf.xml
+      value = session.error.3
+      wrap = <p class="wt_spamshield_error">|</p>
+    }
+    uniquecheck = TEXT
+    uniquecheck {
+      # must be an entry in localconf.xml
+      value = uniquecheck.error
+      wrap = <p class="wt_spamshield_error">|</p>
+    }
+  }
+
+  fields {
+    comments {
+      author = lastname
+      email = email
+      homepage = homepage
+      body = content
+      permalink = homepage
+    }
+    direct_mail_subscription {
+      author = last_name
+      email = email
+      homepage =
+      body =
+      permalink =
+    }
+    ke_userregister {
+      author = last_name
+      email = email
+      homepage =
+      body =
+      permalink =
+    }
+    powermail {
+      author =
+      email =
+      homepage =
+      body =
+      permalink =
+    }
+    t3_blog {
+      author = author
+      email = email
+      homepage = website
+      body = text
+      permalink = website
+    }
+    ve_guestbook {
+      author = surname
+      email = email
+      homepage = homepage
+      body = entry
+      permalink = homepage
+    }
+  }
+}
+
+plugin.tx_keuserregister {
+  create.fields {
+    # create field for error messages
+    wt_spamshield {    
+      type = text
+      doNotSaveInDB = 1
+    }
+  }
+}
