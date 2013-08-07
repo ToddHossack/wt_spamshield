@@ -21,8 +21,10 @@ $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['ve_guestbook']['preEntryInsertHook'][] =
 
 // Validator/ Hook standard mailform: Disable email
 if ($T3Version >= 4006000) {
-	$txFormValidator = t3lib_extMgm::extPath('wt_spamshield') . 'Classes/Extensions/class.tx_form_System_Validate_Wtspamshield.php';
-	include_once($txFormValidator);
+	if( t3lib_extMgm::isLoaded('form') ) {
+		$txFormValidator = t3lib_extMgm::extPath('wt_spamshield') . 'Classes/Extensions/class.tx_form_System_Validate_Wtspamshield.php';
+		include_once($txFormValidator);
+	}
 } else {
 	$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_fe.php']['sendFormmail-PreProcClass'][] = 'EXT:wt_spamshield/Classes/Extensions/class.tx_wtspamshield_defaultmailform.php:tx_wtspamshield_defaultmailform';
 }
