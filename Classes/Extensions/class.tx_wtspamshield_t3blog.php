@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2012 Bjoern Jacob <bjoern.jacob@tritum.de>
+*  (c) 2015 Bjoern Jacob <bjoern.jacob@tritum.de>
 *  based on Code of Alexander Kellner <Alexander.Kellner@einpraegsam.net>
 *  All rights reserved
 *
@@ -90,7 +90,7 @@ class tx_wtspamshield_t3blog extends tslib_pibase {
 
 			$error = $this->validate($validateArray);
 
-			if (!empty($error)) {
+			if (strlen($error) > 0) {
 					// Right now we cannot set errorMessage because it is
 					// protected, see forge.typo3.org #42615
 					// $reference->errorMessage = $error;
@@ -108,7 +108,7 @@ class tx_wtspamshield_t3blog extends tslib_pibase {
 	 */
 	protected function validate(array $fieldValues) {
 
-		$availableValidators = 
+		$availableValidators =
 			array(
 				'httpCheck',
 				'akismetCheck',

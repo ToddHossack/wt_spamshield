@@ -55,30 +55,25 @@ class tx_wtspamshield_method_unique extends tx_wtspamshield_method_abstract {
 		$found = 0;
 		$wholearray = array();
 
-		$extConf = $this->getDiv()->getExtConf();
-		if (isset($extConf)) {
-			if ($extConf['notUnique']) {
-				$tsConf = $this->getDiv()->getTsConf();
-				$error = $this->renderCobj($tsConf['errors.'], 'uniquecheck');
+		$tsConf = $this->getDiv()->getTsConf();
+		$error = $this->renderCobj($tsConf['errors.'], 'uniquecheck');
 
-				$myFieldArray = t3lib_div::trimExplode(';', $extConf['notUnique'], 1);
-				if (is_array($myFieldArray)) {
-					foreach ($myFieldArray as $myKey => $myValue) {
-						$wholearray = array();
-						$fieldarray = t3lib_div::trimExplode(',', $myValue, 1);
+		$myFieldArray = t3lib_div::trimExplode(';', $tsConf['uniqueCheck.']['fields'], 1);
+		if (is_array($myFieldArray)) {
+			foreach ($myFieldArray as $myKey => $myValue) {
+				$wholearray = array();
+				$fieldarray = t3lib_div::trimExplode(',', $myValue, 1);
 
-						if (is_array($fieldarray)) {
-							foreach ($fieldarray as $key => $value) {
-								if ($this->fieldValues[$value]) {
-									$wholearray[] = $this->fieldValues[$value];
-								}
-							}
-						}
-
-						if (count($wholearray) != count(array_unique($wholearray))) {
-							$found = 1;
+				if (is_array($fieldarray)) {
+					foreach ($fieldarray as $key => $value) {
+						if ($this->fieldValues[$value]) {
+							$wholearray[] = $this->fieldValues[$value];
 						}
 					}
+				}
+
+				if (count($wholearray) != count(array_unique($wholearray))) {
+					$found = 1;
 				}
 			}
 		}

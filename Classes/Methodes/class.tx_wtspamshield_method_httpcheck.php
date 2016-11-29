@@ -54,45 +54,41 @@ class tx_wtspamshield_method_httpcheck extends tx_wtspamshield_method_abstract {
 	/**
 	 * Function validate()
 	 *
-	 * @param mixed $array
 	 * @return string $error Return errormessage if error exists
 	 */
-	public function validate($array) {
-		$extConf = $this->getDiv()->getExtConf();
+	public function validate() {
+		if (isset($this->fieldValues)) {
+			$noOfErrors = 0;
+			$tsConf = $this->getDiv()->getTsConf();
+			$error = $this->renderCobj($tsConf['errors.'], 'httpCheck');
+			$error = sprintf($error, intval($tsConf['httpCheck.']['maximumLinkAmount']));
 
-		if (isset($extConf) && isset($this->fieldValues)) {
-			if ($extConf['usehttpCheck'] >= 0) {
+			foreach ((array) $this->fieldValues as $key => $value) {
+				if (!is_array($value)) {
 
-				$noOfErrors = 0;
-				$tsConf = $this->getDiv()->getTsConf();
-				$error = $this->renderCobj($tsConf['errors.'], 'httpCheck');
-				$error = sprintf($error, $extConf['usehttpCheck']);
-
-				foreach ((array) $this->fieldValues as $key => $value) {
-					if (!is_array($value)) {
-
-						$result = array();
-						preg_match_all('@' . $this->searchstring . '@', $value, $result);
-						if (isset($result[0])) {
-							$noOfErrors += count($result[0]);
-						}
-					} else {
-						if (!is_array($value2)) {
-							foreach ((array) $this->fieldValues[$key] as $key2 => $value2 ) {
-								$result = array();
-								preg_match_all('@' . $this->searchstring . '@', $value2, $result);
-								if (isset($result[0])) {
-									$noOfErrors += count($result[0]);
-								}
+					$result = array();
+					preg_match_all('@' . $this->searchstring . '@', strtolower($value), $result);
+					if (isset($result[0])) {
+						$noOfErrors += count($result[0]);
+					}
+				} else {
+						// ???
+					if (!is_array($value2)) {
+						foreach ((array) $this->fieldValues[$key] as $key2 => $value2 ) {
+							$result = array();
+							preg_match_all('@' . $this->searchstring . '@', strtolower($value2), $result);
+							if (isset($result[0])) {
+								$noOfErrors += count($result[0]);
 							}
 						}
 					}
 				}
-
-				if ($noOfErrors > $extConf['usehttpCheck']) {
-					return $error;
-				}
 			}
+
+			if ($noOfErrors > intval($tsConf['httpCheck.']['maximumLinkAmount'])) {
+				return $error;
+			}
+
 		}
 		return '';
 	}

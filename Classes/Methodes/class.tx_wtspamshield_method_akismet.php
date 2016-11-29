@@ -53,34 +53,36 @@ class tx_wtspamshield_method_akismet extends tx_wtspamshield_method_abstract {
 	 * @return string $error Return errormessage if error exists
 	 */
 	public function validate() {
-		$extConf = $this->getDiv()->getExtConf();
 		$error = '';
 
-		if (isset($extConf)) {
-			if ($extConf['AkismetKey']) {
-				$akismetArray = array();
-				$tsConf = $this->getDiv()->getTsConf();
+		$akismetArray = array();
+		$tsConf = $this->getDiv()->getTsConf();
 
-					// Get field mapping from TS
-				$fields = $tsConf['fields.'][$this->tsKey . '.'];
-				foreach ($fields as $key => $value) {
-					if ($value && array_key_exists($value, $this->fieldValues)) {
-						$akismetArray[$key] = $this->fieldValues[$value];
-					}
-				}
-
-				$akismetArray += array(
-					'user_ip' => t3lib_div::getIndpEnv('REMOTE_ADDR'),
-					'user_agent' => t3lib_div::getIndpEnv('HTTP_USER_AGENT')
-				);
-
-				$akismet = new tx_wtspamshield_akismet('http://' . t3lib_div::getIndpEnv('HTTP_HOST') . '/',
-														$extConf['AkismetKey'], $akismetArray);
-
-				if (!$akismet->isError() && $akismet->isSpam()) {
-					$error = $this->renderCobj($tsConf['errors.'], 'akismet');
-				}
+			// Get field mapping from TS
+		$fields = $tsConf['fields.'][$this->tsKey . '.'];
+		foreach ($fields as $key => $value) {
+			if ($value && array_key_exists($value, $this->fieldValues)) {
+				$akismetArray[$key] = $this->fieldValues[$value];
 			}
+		}
+
+		$akismetArray += array(
+			'user_ip' => t3lib_div::getIndpEnv('REMOTE_ADDR'),
+			'user_agent' => t3lib_div::getIndpEnv('HTTP_USER_AGENT')
+		);
+
+		if ((int) $tsConf['akismetCheck.']['testMode'] == 1) {
+			$akismetArray['is_test'] = 1;
+		}
+
+		$akismet = new tx_wtspamshield_akismet(
+			'http://' . t3lib_div::getIndpEnv('HTTP_HOST') . '/',
+			$tsConf['akismetCheck.']['akismetKey'],
+			$akismetArray
+		);
+
+		if (!$akismet->isError() && $akismet->isSpam()) {
+			$error = $this->renderCobj($tsConf['errors.'], 'akismet');
 		}
 
 		if (isset($error)) {

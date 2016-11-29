@@ -52,22 +52,15 @@ class tx_wtspamshield_method_namecheck extends tx_wtspamshield_method_abstract {
 	 * @return string $error Return errormessage if error exists
 	 */
 	public function validate() {
-		$extConf = $this->getDiv()->getExtConf();
-
-		if (isset($extConf)) {
-			if ($extConf['useNameCheck'] == 1) {
-				if ($this->additionalValues['name1'] === $this->additionalValues['name2'] && $this->additionalValues['name1']) {
-					$tsConf = $this->getDiv()->getTsConf();
-					$error = $this->renderCobj($tsConf['errors.'], 'nameCheck');
-				}
-				if (isset($error)) {
-					return $error;
-				}
-			}
+		if ($this->additionalValues['name1'] === $this->additionalValues['name2'] && $this->additionalValues['name1']) {
+			$tsConf = $this->getDiv()->getTsConf();
+			$error = $this->renderCobj($tsConf['errors.'], 'nameCheck');
 		}
-		return '';
-	}
 
+		if (isset($error)) {
+			return $error;
+		}
+	}
 }
 
 if (defined('TYPO3_MODE')

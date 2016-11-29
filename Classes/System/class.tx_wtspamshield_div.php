@@ -94,13 +94,22 @@ class tx_wtspamshield_div extends tslib_pibase {
 	 * @param string $extension
 	 * @return boolean
 	 */
-	public function isActivated($extension) {
+	public function isActivated($extension, $sessionLookup = FALSE) {
+		if ($sessionLookup) {
+			$sessionKey = 'wt_spamshield_enable_' . $extension;
+			$sessionValue = $GLOBALS['TSFE']->fe_user->getKey('ses', $sessionKey);
+			if (isset($sessionValue['enable.'][$extension])) {
+				return TRUE;
+			}
+		}
+
 		$tsConf = $this->getTsConf();
-		if (!empty($tsConf['enable.'][$extension])
+		if (intval($tsConf['enable.'][$extension]) == 1
 			&& $this->spamshieldIsNotDisabled()
 		) {
 			return TRUE;
 		}
+
 		return FALSE;
 	}
 
@@ -126,26 +135,51 @@ class tx_wtspamshield_div extends tslib_pibase {
 	public function getTsConf() {
 		if (!isset($this->tsConf)) {
 			$this->tsConf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.'];
+			$this->mergeWithExtConf();
 		}
 		return $this->tsConf;
 	}
 
 	/**
-	 * getExtConf
-	 *
-	 * @return mixed
+	 * merge typoscript with ext conf
+	 * 
+	 * lookup for deprecated ext_conf_template settings
+	 * we remove this lookup in the next Version!
+	 * 
+	 * @return void
 	 */
-	public function getExtConf() {
-		if(!isset($this->extConf)) {
-			$extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]);
-			if ( !is_array($extConf) ) {
-				echo $this->msg('Please open ' . $this->extKey . ' in the Extension Manager, scroll down and click "Update"');
-				$this->extConf = NULL;
-			} else {
-				$this->extConf = $extConf;
+	public function mergeWithExtConf() {
+		$extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]);
+
+		if ( is_array($extConf) ) {
+			if ($this->tsConf['httpCheck.']['maximumLinkAmount'] == '') {
+				$this->tsConf['httpCheck.']['maximumLinkAmount'] = $extConf['usehttpCheck'];
+			}
+
+			if ($this->tsConf['uniqueCheck.']['fields'] == '') {
+				$this->tsConf['uniqueCheck.']['fields'] = $extConf['notUnique'];
+			}
+
+			if ($this->tsConf['sessionCheck.']['sessionStartTime'] == '') {
+				$this->tsConf['sessionCheck.']['sessionStartTime'] = $extConf['SessionStartTime'];
+			}
+
+			if ($this->tsConf['sessionCheck.']['sessionEndTime'] == '') {
+				$this->tsConf['sessionCheck.']['sessionEndTime'] = $extConf['SessionEndTime'];
+			}
+
+			if ($this->tsConf['akismetCheck.']['akismetKey'] == '') {
+				$this->tsConf['akismetCheck.']['akismetKey'] = $extConf['AkismetKey'];
+			}
+
+			if ($this->tsConf['logging.']['notificationAddress'] == '') {
+				$this->tsConf['logging.']['notificationAddress'] = $extConf['email_notify'];
+			}
+
+			if ($this->tsConf['logging.']['pid'] == '') {
+				$this->tsConf['logging.']['pid'] = $extConf['pid'];
 			}
 		}
-		return $this->extConf;
 	}
 
 	/**

@@ -22,6 +22,10 @@ $return = array(
 'tx_wtspamshield_method_namecheck' => $extPath . 'Classes/Methodes/class.tx_wtspamshield_method_namecheck.php',
 'tx_wtspamshield_method_session' => $extPath . 'Classes/Methodes/class.tx_wtspamshield_method_session.php',
 'tx_wtspamshield_method_unique' => $extPath . 'Classes/Methodes/class.tx_wtspamshield_method_unique.php',
+
+'tx_wtspamshield_powermail2' => $extPath . 'Classes/Extensions/class.tx_wtspamshield_powermail2.php',
+'Tx_WtSpamshieldFormhandler_Interceptor_WtSpamshield' => $extPath . 'Classes/Extensions/Tx_WtSpamshieldFormhandler_Interceptor_WtSpamshield.php',
+
 );
 
 return $return;

@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2013 Ralf Zimmermann <ralf.zimmermann@tritum.de>
+*  (c) 2015 Ralf Zimmermann <ralf.zimmermann@tritum.de>
 *  All rights reserved
 *
 *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -119,7 +119,7 @@ class user_tx_wtspamshield_direct_mail_subscription extends user_feAdmin {
 			$validateArray = $this->dataArr;
 			$error = $this->validate($validateArray);
 
-			if (!empty($error)) {
+			if (strlen($error) > 0) {
 					// $this->error='###TEMPLATE_NO_PERMISSIONS###';
 				$this->saved = 0;
 				$this->cmd = 'create';
@@ -140,7 +140,7 @@ class user_tx_wtspamshield_direct_mail_subscription extends user_feAdmin {
 	 */
 	protected function validate(array $fieldValues) {
 
-		$availableValidators = 
+		$availableValidators =
 			array(
 				'blacklistCheck',
 				'httpCheck',

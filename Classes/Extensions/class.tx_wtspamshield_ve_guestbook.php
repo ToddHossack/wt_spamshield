@@ -90,14 +90,11 @@ class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 			$obj->code == 'FORM' &&
 			$this->getDiv()->isActivated($this->tsKey)
 		) {
-				// 1. check Extension Manager configuration
-			$this->getDiv()->getExtConf();
-
-				// 2. Session check - generate session entry
+				// Session check - generate session entry
 			$methodSessionInstance = t3lib_div::makeInstance('tx_wtspamshield_method_session');
 			$methodSessionInstance->setSessionTime();
 
-				// 3. Honeypot check - generate honeypot Input field
+				// Honeypot check - generate honeypot Input field
 			$methodHoneypotInstance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot');
 			$methodHoneypotInstance->additionalValues = $this->additionalValues['honeypotCheck'];
 			$obj->templateCode = str_replace('</form>', $methodHoneypotInstance->createHoneypot() . '</form>', $obj->templateCode);
@@ -119,9 +116,14 @@ class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 
 		if ( $this->getDiv()->isActivated($this->tsKey) ) {
 				// get GPvars, downwards compatibility
-			$t3Version = class_exists('t3lib_utility_VersionNumber')
-				? t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version)
-				: t3lib_div::int_from_ver(TYPO3_version);
+			if (class_exists('\TYPO3\CMS\Core\Utility\GeneralUtility\VersionNumberUtility')) {
+				$t3Version = \TYPO3\CMS\Core\Utility\GeneralUtility\VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
+			} else if (class_exists('t3lib_utility_VersionNumber')) {
+				$t3Version = t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version);
+			} else if (class_exists('t3lib_div')) {
+				$t3Version = t3lib_div::int_from_ver(TYPO3_version);
+			}
+
 			if ($t3Version < 4006000) {
 				$validateArray = t3lib_div::GPvar('tx_veguestbook_pi1');
 			} else {
@@ -129,13 +131,13 @@ class tx_wtspamshield_ve_guestbook extends tslib_pibase {
 			}
 			$error = $this->validate($validateArray);
 
-				// 2c. Truncate ve_guestbook temp table
+				// Truncate ve_guestbook temp table
 			if ($error) {
-				mysql_query('TRUNCATE TABLE tx_wtspamshield_veguestbooktemp');
+				$GLOBALS['TYPO3_DB']->exec_TRUNCATEquery('tx_wtspamshield_veguestbooktemp');
 			}
 
-				// 2d. Redirect if error happens
-			if (!empty($error)) {
+				// Redirect if error happens
+			if (strlen($error) > 0) {
 				$saveData = array('tstamp' => time());
 				$obj->strEntryTable = 'tx_wtspamshield_veguestbooktemp';
 				$obj->config['notify_mail'] = '';

@@ -3,14 +3,13 @@ if (!defined ('TYPO3_MODE')) {
 	die ('Access denied.');
 }
 
-$t3Version = class_exists('t3lib_utility_VersionNumber')
-	? t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version)
-	: t3lib_div::int_from_ver(TYPO3_version);
-
 t3lib_extMgm::addStaticFile($_EXTKEY, 'Configuration/TypoScript', 'Main Settings');
 t3lib_extMgm::addStaticFile($_EXTKEY, 'Configuration/TypoScript/Extensions/direct_mail_subscription', 'direct_mail_subscription');
-	// only add static template for default mailform if T3 < 4.6
-if ($t3Version < 4006000) {
+t3lib_extMgm::addStaticFile($_EXTKEY, 'Configuration/TypoScript/Extensions/formhandler', 'formhandler');
+
+	// only add static template for default mailform
+	// if new form extension is not loaded
+if (!t3lib_extMgm::isLoaded('form')) {
 	t3lib_extMgm::addStaticFile($_EXTKEY, 'Configuration/TypoScript/Extensions/defaultmailform', 'Default Mailform');
 }
 

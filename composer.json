@@ -3,7 +3,7 @@
   "description":"Spam shield without captcha to avoid spam in powermail, ve_guestbook, comments, t3_blog and standard TYPO3 mailforms. Session check, Link check, Time check, Akismet check, Name check, Honeypot check (see manual for details)",
   "homepage":"http://typo3.org/extensions/repository/view/wt_spamshield",
   "type":"typo3-cms-extension",
-  "version": "1.0.0",
+  "version": "1.3.1",
   "authors":[
     {
       "name":"Alex Kellner, Bjoern Jacob",

@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2013 Ralf Zimmermann <Ralf.Zimmermann@tritum.de>
+*  (c) 2015 Ralf Zimmermann <Ralf.Zimmermann@tritum.de>
 *  All rights reserved
 *
 *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -96,7 +96,7 @@ class tx_form_System_Validate_Wtspamshield extends tx_form_System_Validate_Abstr
 				$error = $this->validate($validateArray);
 			}
 
-			if (!empty($error)) {
+			if (strlen($error) > 0 ) {
 				$this->setError('', strip_tags($error));
 				return FALSE;
 			}
@@ -113,7 +113,7 @@ class tx_form_System_Validate_Wtspamshield extends tx_form_System_Validate_Abstr
 	 */
 	protected function validate(array $fieldValues) {
 
-		$availableValidators = 
+		$availableValidators =
 			array(
 				'blacklistCheck',
 				'httpCheck',

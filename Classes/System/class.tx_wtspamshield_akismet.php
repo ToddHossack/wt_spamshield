@@ -97,8 +97,30 @@ class tx_wtspamshield_akismet extends tx_wtspamshield_akismet_object {
 	 * @return void
 	 */
 	public function __construct($blogUrl, $apiKey, $comment) {
+
 		$this->blogUrl = $blogUrl;
 		$this->apiKey  = $apiKey;
+
+		$this->urls = array (
+			'verify' => $this->akismetServer . '/'
+						. $this->akismetVersion
+						. '/verify-key',
+
+			'commentCheck' => $this->apiKey . '.'
+							. $this->akismetServer . '/'
+							. $this->akismetVersion
+							. '/comment-check',
+
+			'submitSpam' => $this->apiKey . '.' 
+							. $this->akismetServer . '/'
+							. $this->akismetVersion
+							. '/submit-spam',
+
+			'submitHam' => $this->apiKey . '.'
+							. $this->akismetServer . '/'
+							. $this->akismetVersion
+							. '/submit-ham'
+		);
 
 			// Populate the comment array with information needed by Akismet
 		$this->comment = $comment;
@@ -109,16 +131,18 @@ class tx_wtspamshield_akismet extends tx_wtspamshield_akismet_object {
 				? $_SERVER['REMOTE_ADDR']
 				: getenv('HTTP_X_FORWARDED_FOR');
 		}
+
 		if (!isset($this->comment['user_agent'])) {
 			$this->comment['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
 		}
+
 		if (!isset($this->comment['referrer'])) {
 			$this->comment['referrer'] = $_SERVER['HTTP_REFERER'];
 		}
 		$this->comment['blog'] = $blogUrl;
 
 			// Connect to the Akismet server and populate errors if they exist
-		$this->http = new tx_wtspamshield_akismet_httpclient($this->akismetServer, $blogUrl, $apiKey);
+		$this->http = new tx_wtspamshield_akismet_httpclient();
 		if ($this->http->errorsExist()) {
 			$this->errors = array_merge($this->errors, $this->http->getErrors());
 		}
@@ -135,8 +159,7 @@ class tx_wtspamshield_akismet extends tx_wtspamshield_akismet_object {
 	 * @return boolean
 	 */
 	public function isSpam() {
-		$response = $this->http->getResponse($this->getQueryString(), 'comment-check');
-
+		$response = $this->http->getResponse($this->getQueryString(), $this->urls['commentCheck']);
 		return ($response == 'true');
 	}
 
@@ -146,7 +169,7 @@ class tx_wtspamshield_akismet extends tx_wtspamshield_akismet_object {
 	 * @return void
 	 */
 	public function submitSpam() {
-		$this->http->getResponse($this->getQueryString(), 'submit-spam');
+		$this->http->getResponse($this->getQueryString(), $this->urls['submitSpam']);
 	}
 
 	/**
@@ -155,7 +178,7 @@ class tx_wtspamshield_akismet extends tx_wtspamshield_akismet_object {
 	 * @return void
 	 */
 	public function submitHam() {
-		$this->http->getResponse($this->getQueryString(), 'submit-ham');
+		$this->http->getResponse($this->getQueryString(), $this->urls['submitHam']);
 	}
 
 	/**
@@ -164,7 +187,7 @@ class tx_wtspamshield_akismet extends tx_wtspamshield_akismet_object {
 	 * @return boolean
 	 */
 	protected function isValidApiKey() {
-		$keyCheck = $this->http->getResponse('key=' . $this->apiKey . '&blog=' . $this->blogUrl, 'verify-key');
+		$keyCheck = $this->http->getResponse('key=' . $this->apiKey . '&blog=' . $this->blogUrl, $this->urls['verify']);
 		return ($keyCheck == 'valid');
 	}
 

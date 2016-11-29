@@ -51,15 +51,16 @@ class tx_wtspamshield_log extends tslib_pibase {
 	 * @return string
 	 */
 	public function dbLog($ext, $points, $errorMessages, $formArray) {
-		$conf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$this->extKey]);
+		$div = t3lib_div::makeInstance('tx_wtspamshield_div');
+		$tsConf = $div->getTsConf();
 
-		if (isset($conf) && $this->dbInsert) {
-			if ($conf['pid'] == -1) {
+		if ($this->dbInsert) {
+			if ($tsConf['logging.']['pid'] == -1) {
 				return FALSE;
 			}
 
-			if ($conf['pid'] == -2) {
-				$conf['pid'] = $GLOBALS['TSFE']->id;
+			if ($tsConf['logging.']['pid'] == -2) {
+				$tsConf['logging.']['pid'] = $GLOBALS['TSFE']->id;
 			}
 
 			$title = date('d.m.Y H:i:s', time()) . ' - ' .
@@ -69,7 +70,7 @@ class tx_wtspamshield_log extends tslib_pibase {
 			$errorMessage = 'Score: ' . $points;
 
 			$dbValues = array (
-				'pid' => intval($conf['pid']),
+				'pid' => intval($tsConf['logging.']['pid']),
 				'tstamp' => time(),
 				'crdate' => time(),
 				'title' => $title,
@@ -80,13 +81,22 @@ class tx_wtspamshield_log extends tslib_pibase {
 				'useragent' => t3lib_div::getIndpEnv('HTTP_USER_AGENT')
 			);
 				// Downwards compatibility
-			$t3Version = class_exists('t3lib_utility_VersionNumber')
-				? t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version)
-				: t3lib_div::int_from_ver(TYPO3_version);
+			if (class_exists('\TYPO3\CMS\Core\Utility\GeneralUtility\VersionNumberUtility')) {
+				$t3Version = \TYPO3\CMS\Core\Utility\GeneralUtility\VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
+			} else if (class_exists('t3lib_utility_VersionNumber')) {
+				$t3Version = t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version);
+			} else if (class_exists('t3lib_div')) {
+				$t3Version = t3lib_div::int_from_ver(TYPO3_version);
+			}
+
 			if ($t3Version < 4007000) {
-				$dbValues += array('formvalues' => t3lib_div::view_array($formArray) . t3lib_div::view_array($errorMessages));
+				$dbValues += array(
+					'formvalues' => t3lib_div::view_array($formArray) . t3lib_div::view_array($errorMessages)
+				);
 			} else {
-				$dbValues += array('formvalues' => t3lib_utility_Debug::viewArray($formArray) . t3lib_utility_Debug::viewArray($errorMessages));
+				$dbValues += array(
+					'formvalues' => t3lib_utility_Debug::viewArray($formArray) . t3lib_utility_Debug::viewArray($errorMessages)
+				);
 			}
 
 			$GLOBALS['TYPO3_DB']->exec_INSERTquery('tx_wtspamshield_log', $dbValues);

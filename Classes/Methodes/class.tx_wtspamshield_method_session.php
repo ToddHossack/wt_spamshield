@@ -54,17 +54,30 @@ class tx_wtspamshield_method_session extends tx_wtspamshield_method_abstract {
 	 * @return void
 	 */
 	public function setSessionTime($forceValue = TRUE) {
-		$extConf = $this->getDiv()->getExtConf();
+		$tsConf = $this->getDiv()->getTsConf();
 
-		if (isset($extConf)) {
-			$timeStamp = intval($GLOBALS['TSFE']->fe_user->getKey('ses', 'wt_spamshield_form_tstamp'));
-			$isOutdated = ($timeStamp + $extConf['SessionEndTime'] < time());
+		$sessionEndTime = intval($tsConf['sessionCheck.']['sessionEndTime']);
+		$timeStamp = intval($GLOBALS['TSFE']->fe_user->getKey('ses', 'wt_spamshield_form_tstamp'));
+		$isOutdated = ($timeStamp + $sessionEndTime < time());
 
-			if ($forceValue || $isOutdated) {
-				$GLOBALS['TSFE']->fe_user->setKey('ses', 'wt_spamshield_form_tstamp', time());
-				$GLOBALS['TSFE']->storeSessionData();
-			}
+		if ($forceValue || $isOutdated) {
+			$GLOBALS['TSFE']->fe_user->setKey('ses', 'wt_spamshield_form_tstamp', time());
+			$GLOBALS['TSFE']->storeSessionData();
 		}
+
+	}
+
+	/**
+	 * Save the current Page TS in session (when the form is rendered)
+	 *
+	 * @param string $key
+	 * @return void
+	 */
+	public function saveCurrentTSInSession($key) {
+		$key = 'wt_spamshield_enable_' . $key;
+		$value = $GLOBALS['TSFE']->tmpl->setup['plugin.']['wt_spamshield.'];
+		$GLOBALS['TSFE']->fe_user->setKey('ses', $key, $value);
+		$GLOBALS['TSFE']->storeSessionData();
 	}
 
 	/**
@@ -73,26 +86,24 @@ class tx_wtspamshield_method_session extends tx_wtspamshield_method_abstract {
 	 * @return string $error Return errormessage if error exists
 	 */
 	public function validate() {
-		$extConf = $this->getDiv()->getExtConf();
 		$error = '';
 
-		if (isset($extConf)) {
-			if ($extConf['useSessionCheck'] == 1) {
-				$sessTstamp = intval($GLOBALS['TSFE']->fe_user->getKey('ses', 'wt_spamshield_form_tstamp'));
-				$tsConf = $this->getDiv()->getTsConf();
+		$sessTstamp = intval($GLOBALS['TSFE']->fe_user->getKey('ses', 'wt_spamshield_form_tstamp'));
+		$tsConf = $this->getDiv()->getTsConf();
 
-				if ($sessTstamp > 0) {
-					if ((($sessTstamp + $extConf['SessionEndTime']) < time()) && ($extConf['SessionEndTime'] > 0)) {
-						$error = $this->renderCobj($tsConf['errors.'], 'session_error_1');
-					} elseif ( (($sessTstamp + $extConf['SessionStartTime']) > time())
-								&& ($extConf['SessionStartTime'] > 0)
-					) {
-						$error = $this->renderCobj($tsConf['errors.'], 'session_error_2');
-					}
-				} else {
-					$error = $this->renderCobj($tsConf['errors.'], 'session_error_3');
-				}
+		$sessionStartTime = intval($tsConf['sessionCheck.']['sessionStartTime']);
+		$sessionEndTime = intval($tsConf['sessionCheck.']['sessionEndTime']);
+
+		if ($sessTstamp > 0) {
+			if ((($sessTstamp + $sessionEndTime) < time()) && ($sessionEndTime > 0)) {
+				$error = $this->renderCobj($tsConf['errors.'], 'session_error_1');
+			} elseif ( (($sessTstamp + $sessionStartTime) > time())
+						&& ($sessionStartTime > 0)
+			) {
+				$error = $this->renderCobj($tsConf['errors.'], 'session_error_2');
 			}
+		} else {
+			$error = $this->renderCobj($tsConf['errors.'], 'session_error_3');
 		}
 
 		return $error;

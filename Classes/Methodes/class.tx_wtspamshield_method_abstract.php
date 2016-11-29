@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2009 Ralf Zimmermann <ralf.zimmermann@tritum.de>
+*  (c) 2015 Ralf Zimmermann <ralf.zimmermann@tritum.de>
 *  All rights reserved
 *
 *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -64,9 +64,13 @@ class tx_wtspamshield_method_abstract extends tslib_pibase {
 
 		$this->ll = $this->includeLocalLang();
 
-		$t3Version = class_exists('t3lib_utility_VersionNumber')
-			? t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version)
-			: t3lib_div::int_from_ver(TYPO3_version);
+		if (class_exists('\TYPO3\CMS\Core\Utility\GeneralUtility\VersionNumberUtility')) {
+			$t3Version = \TYPO3\CMS\Core\Utility\GeneralUtility\VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
+		} else if (class_exists('t3lib_utility_VersionNumber')) {
+			$t3Version = t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version);
+		} else if (class_exists('t3lib_div')) {
+			$t3Version = t3lib_div::int_from_ver(TYPO3_version);
+		}
 
 		if ($t3Version >= 6000000) {
 			$this->cObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('tslib_cObj');
@@ -92,9 +96,13 @@ class tx_wtspamshield_method_abstract extends tslib_pibase {
 	 * @return mixed $localLang
 	 */
 	public function includeLocalLang() {
-		$t3Version = class_exists('t3lib_utility_VersionNumber')
-			? t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version)
-			: t3lib_div::int_from_ver(TYPO3_version);
+		if (class_exists('\TYPO3\CMS\Core\Utility\GeneralUtility\VersionNumberUtility')) {
+			$t3Version = \TYPO3\CMS\Core\Utility\GeneralUtility\VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
+		} else if (class_exists('t3lib_utility_VersionNumber')) {
+			$t3Version = t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version);
+		} else if (class_exists('t3lib_div')) {
+			$t3Version = t3lib_div::int_from_ver(TYPO3_version);
+		}
 
 		if ($t3Version >= 6000000) {
 			$llFile = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('wt_spamshield') .

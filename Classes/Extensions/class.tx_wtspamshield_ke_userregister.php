@@ -85,14 +85,11 @@ class tx_wtspamshield_ke_userregister extends tslib_pibase {
 	 */
 	public function additionalMarkers(&$markerArray, $pObj, $errors) {
 		if ( $this->getDiv()->isActivated($this->tsKey) ) {
-				// 1. check Extension Manager configuration
-			$this->getDiv()->getExtConf();
-
-				// 2. Session check - generate session entry
+				// Session check - generate session entry
 			$methodSessionInstance = t3lib_div::makeInstance('tx_wtspamshield_method_session');
 			$methodSessionInstance->setSessionTime();
 
-				// 3. Honeypot check - generate honeypot Input field
+				// Honeypot check - generate honeypot Input field
 			$methodHoneypotInstance = t3lib_div::makeInstance('tx_wtspamshield_method_honeypot');
 			$methodHoneypotInstance->additionalValues = $this->additionalValues['honeypotCheck'];
 			$pObj->templateCode = str_replace('</form>', $methodHoneypotInstance->createHoneypot() . '</form>', $pObj->templateCode);
@@ -116,12 +113,16 @@ class tx_wtspamshield_ke_userregister extends tslib_pibase {
 
 		$error = '';
 
-		$t3Version = class_exists('t3lib_utility_VersionNumber')
-			? t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version)
-			: t3lib_div::int_from_ver(TYPO3_version);
+		if (class_exists('\TYPO3\CMS\Core\Utility\GeneralUtility\VersionNumberUtility')) {
+			$t3Version = \TYPO3\CMS\Core\Utility\GeneralUtility\VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
+		} else if (class_exists('t3lib_utility_VersionNumber')) {
+			$t3Version = t3lib_utility_VersionNumber::convertVersionNumberToInteger(TYPO3_version);
+		} else if (class_exists('t3lib_div')) {
+			$t3Version = t3lib_div::int_from_ver(TYPO3_version);
+		}
 
 			// get GPvars, downwards compatibility
-		if ($t3Version < 4004000){
+		if ($t3Version < 4004000) {
 			$validateArray = t3lib_div::GPvar('tx_keuserregister_pi1');
 		} else {
 			$validateArray = t3lib_div::_GP('tx_keuserregister_pi1');
@@ -130,7 +131,7 @@ class tx_wtspamshield_ke_userregister extends tslib_pibase {
 		if ( $this->getDiv()->isActivated($this->tsKey) ) {
 
 			$error = $this->validate($validateArray);
-				// 2c. Error message
+				// Error message
 			if ($error) {
 					// Workaround: create field via TS and put it in HTML
 					// template of ke_userregister
@@ -149,7 +150,7 @@ class tx_wtspamshield_ke_userregister extends tslib_pibase {
 		$this->additionalValues['nameCheck']['name1'] = $fieldValues['first_name'];
 		$this->additionalValues['nameCheck']['name2'] = $fieldValues['last_name'];
 
-		$availableValidators = 
+		$availableValidators =
 			array(
 				'blacklistCheck',
 				'nameCheck',

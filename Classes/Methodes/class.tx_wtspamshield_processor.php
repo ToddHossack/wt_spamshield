@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2013 Ralf Zimmermann <ralf.zimmermann@tritum.de>
+*  (c) 2015 Ralf Zimmermann <ralf.zimmermann@tritum.de>
 *  All rights reserved
 *
 *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -104,7 +104,7 @@ class tx_wtspamshield_processor {
 				$methodInstance->additionalValues = $this->additionalValues[$method];
 				$methodInstance->tsKey = $this->tsKey;
 				$methodReturn = $methodInstance->validate();
-				if (!empty($methodReturn)) {
+				if (strlen($methodReturn) > 0) {
 					$this->currentFailures++;
 					$this->errorMessages[] = $methodReturn;
 				}

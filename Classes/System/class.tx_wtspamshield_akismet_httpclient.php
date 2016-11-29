@@ -68,17 +68,11 @@ class tx_wtspamshield_akismet_httpclient extends tx_wtspamshield_akismet_object 
 	/**
 	 * Constructor
 	 *
-	 * @param string $host
-	 * @param string $blogUrl
-	 * @param string $apiKey
 	 * @param integer $port
 	 * @return void
 	 */
-	public function __construct($host, $blogUrl, $apiKey, $port = 80) {
-		$this->host = $host;
+	public function __construct($port = 80) {
 		$this->port = $port;
-		$this->blogUrl = $blogUrl;
-		$this->apiKey = $apiKey;
 	}
 
 	/**
@@ -86,60 +80,54 @@ class tx_wtspamshield_akismet_httpclient extends tx_wtspamshield_akismet_object 
 	 * server and return that response
 	 *
 	 * @param mixed $request
-	 * @param string $path
+	 * @param string $url
 	 * @param string $type
-	 * @param integer $responseLength
 	 * @return mixed
 	 */
-	public function getResponse($request, $path, $type = 'post', $responseLength = 1160) {
+	public function getResponse($request, $url) {
 		$this->connect();
 
 		if ($this->con && !$this->isError(AKISMET_SERVER_NOT_FOUND)) {
-			$request  =
-					strToUpper($type) . ' /' .
-					$this->akismetVersion . '/' .
-					$path .
-					" HTTP/1.1\r\n" .
-					'Host: ' .
-					( ( !empty($this->apiKey) )
-						? $this->apiKey  . '.'
-						: NULL
-					) .
-					$this->host . "\r\n" .
-					"Content-Type: application/x-www-form-urlencoded; charset=utf-8\r\n" .
-					'Content-Length: ' . strlen($request) . "\r\n" .
-					"User-Agent: Akismet PHP4 Class\r\n" .
-					"\r\n" .
-					$request;
-			$response = '';
+			curl_setopt($this->con, CURLOPT_URL, $url);
+			curl_setopt($this->con, CURLOPT_POSTFIELDS, $request);
 
-			@fwrite($this->con, $request);
-
-			while (!feof($this->con)) {
-				$response .= @fgets($this->con, $responseLength);
+			if(!$response = curl_exec($this->con)) {
+				$this->setError(AKISMET_RESPONSE_FAILED, 'The response could not be retrieved.');
+				return;
 			}
 
-			$response = explode("\r\n\r\n", $response, 2);
-			return $response[1];
-		} else {
-			$this->setError(AKISMET_RESPONSE_FAILED, 'The response could not be retrieved.');
-		}
-
-		$this->disconnect();
-		return NULL;
-	}
-
-	/**
-	 * Connect to the Akismet server and store that connection in the
-	 * instance variable $con
-	 *
-	 * @return void
-	 */
-	public function connect() {
-		if (!($this->con = @fsockopen($this->host, $this->port))) {
-			$this->setError(AKISMET_SERVER_NOT_FOUND, 'Could not connect to akismet server.');
+			$this->disconnect();
+			return $response;
 		}
 	}
+
+    /**
+     * Initializes a new cURL session/handle
+     *
+     * @return	boolean
+    */
+    public function connect() {
+		if (!is_resource($this->con)) {
+			if(!$this->con = curl_init()) {
+			   $this->setError(AKISMET_SERVER_NOT_FOUND, 'Could not connect to akismet server.');
+			   return;
+			}
+		}
+
+		curl_setopt($this->con, CURLOPT_HEADER, 0);
+		curl_setopt($this->con, CURLOPT_POST, 1);
+		curl_setopt($this->con, CURLOPT_TIMEOUT, 0); 
+		curl_setopt($this->con, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($this->con, CURLOPT_USERAGENT, 
+					"Akismet PHP4 Class");
+		curl_setopt($this->con, CURLOPT_FRESH_CONNECT, 1);
+
+		if ($this->port != 80) {
+			curl_setopt($this->con, CURLOPT_PORT, $this->port);
+		}
+
+		return true;
+    }
 
 	/**
 	 * Close the connection to the Akismet server
@@ -147,7 +135,14 @@ class tx_wtspamshield_akismet_httpclient extends tx_wtspamshield_akismet_object 
 	 * @return void
 	 */
 	public function disconnect() {
-		@fclose($this->con);
+		if (is_resource($this->con)) {
+			if (!curl_close($this->con)) {
+				$this->setError(AKISMET_SERVER_NOT_FOUND, 'Could not close the CURL instance');
+				return;
+			}
+		}
+
+		return true;
 	}
 }
 

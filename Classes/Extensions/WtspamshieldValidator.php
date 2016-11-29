@@ -4,7 +4,7 @@ namespace TYPO3\CMS\Form\Validation;
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2013 Ralf Zimmermann <Ralf.Zimmermann@tritum.de>
+*  (c) 2015 Ralf Zimmermann <Ralf.Zimmermann@tritum.de>
 *  All rights reserved
 *
 *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -32,6 +32,13 @@ namespace TYPO3\CMS\Form\Validation;
  * @subpackage wt_spamshield
  */
 class WtspamshieldValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
+
+	/**
+	 * Constant for localisation
+	 *
+	 * @var string
+	 */
+	const LOCALISATION_OBJECT_NAME = 'tx_form_system_validate_wtspamshield';
 
 	/**
 	 * @var tx_wtspamshield_div
@@ -98,7 +105,7 @@ class WtspamshieldValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator
 				$error = $this->validate($validateArray);
 			}
 
-			if (!empty($error)) {
+			if (strlen($error) > 0) {
 				$this->setError('', strip_tags($error));
 				return FALSE;
 			}
@@ -115,7 +122,7 @@ class WtspamshieldValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator
 	 */
 	protected function validate(array $fieldValues) {
 
-		$availableValidators = 
+		$availableValidators =
 			array(
 				'blacklistCheck',
 				'httpCheck',
