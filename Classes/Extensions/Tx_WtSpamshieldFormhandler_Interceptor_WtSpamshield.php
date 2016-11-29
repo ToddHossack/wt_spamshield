@@ -17,7 +17,7 @@
  *
  * @author	Charles Brunet <charles@cbrunet.net>
  */
-class Tx_WtSpamshieldFormhandler_Interceptor_WtSpamshield extends Tx_Formhandler_Interceptor_AntiSpamFormTime {
+class Tx_WtSpamshieldFormhandler_Interceptor_WtSpamshield extends \Typoheads\Formhandler\Interceptor\AntiSpamFormTime {
 
 
 	/**
